@@ -1,7 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-import { createChatSession, getProfileByClerkId, getUserChatSessions, touchLastSeen } from '@/lib/server/db';
+import { createSessionGreeting } from '@/lib/server/ai';
+import { addChatMessage, createChatSession, getProfileByClerkId, getUserChatSessions, touchLastSeen } from '@/lib/server/db';
 
 function isAccessDenied(profile) {
   return !profile || !profile.is_verified || profile.is_disabled;
@@ -44,9 +45,16 @@ export async function POST() {
     }
 
     const session = await createChatSession(userId);
+    const greetingMessage = await addChatMessage({
+      sessionId: session.id,
+      clerkUserId: userId,
+      role: 'assistant',
+      content: createSessionGreeting(profile.first_name),
+    });
+
     await touchLastSeen(userId, false);
 
-    return NextResponse.json({ session }, { status: 201 });
+    return NextResponse.json({ session, messages: [greetingMessage] }, { status: 201 });
   } catch (error) {
     console.error('Failed to create session:', error);
     return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });

@@ -1,5 +1,6 @@
 import ChatClient from '@/components/ChatClient';
-import { createChatSession, getChatMessages, getUserChatSessions } from '@/lib/server/db';
+import { createSessionGreeting } from '@/lib/server/ai';
+import { addChatMessage, createChatSession, getChatMessages, getUserChatSessions } from '@/lib/server/db';
 import { requirePageUser } from '@/lib/server/authz';
 
 export default async function ChatPage({ searchParams }) {
@@ -14,6 +15,12 @@ export default async function ChatPage({ searchParams }) {
 
   if (!requestedSessionId && !sessions.length) {
     const newSession = await createChatSession(userId);
+    await addChatMessage({
+      sessionId: newSession.id,
+      clerkUserId: userId,
+      role: 'assistant',
+      content: createSessionGreeting(profile.first_name),
+    });
     sessions = [newSession];
   }
 

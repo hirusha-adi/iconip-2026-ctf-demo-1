@@ -193,7 +193,7 @@ export default function ChatClient({
       const newSession = payload.session;
       setSessions((prev) => [newSession, ...prev]);
       setActiveSessionId(newSession.id);
-      setMessages([]);
+      setMessages(payload.messages || []);
       setInvalidRequestedSession(false);
       cancelEditingSession();
       updateSessionInUrl(newSession.id);
@@ -516,6 +516,24 @@ export default function ChatClient({
                     </div>
                   );
                 })}
+
+                {sending ? (
+                  <div className="flex justify-start">
+                    <div className="cyber-note border-[#2a2a3a] bg-[#151525] text-foreground">
+                      <div className="flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00d4ff]" />
+                        <span
+                          className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00d4ff]"
+                          style={{ animationDelay: "120ms" }}
+                        />
+                        <span
+                          className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00d4ff]"
+                          style={{ animationDelay: "240ms" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

@@ -3,13 +3,13 @@ import { NextResponse } from 'next/server';
 
 import {
   appendChatExchange,
+  getChatMessages,
   getChatSession,
   getProfileByClerkId,
   touchLastSeen,
 } from '@/lib/server/db';
+import { generateAssistantReply } from '@/lib/server/ai';
 import { chatMessageSchema } from '@/lib/shared/validation';
-
-const BOT_REPLY = 'Hello World';
 
 function isAccessDenied(profile) {
   return !profile || !profile.is_verified || profile.is_disabled;
@@ -46,18 +46,23 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Session has already ended' }, { status: 400 });
     }
 
+    const existingMessages = await getChatMessages(sessionId, userId);
+    const assistantReply = await generateAssistantReply({
+      history: [...existingMessages, { role: 'user', content }],
+    });
+
     const inserted = await appendChatExchange({
       sessionId,
       clerkUserId: userId,
       userMessage: content,
-      assistantMessage: BOT_REPLY,
+      assistantMessage: assistantReply,
     });
 
     await touchLastSeen(userId, false);
 
     return NextResponse.json({
       messages: inserted,
-      assistant: BOT_REPLY,
+      assistant: assistantReply,
     });
   } catch (error) {
     console.error('Failed to post message:', error);

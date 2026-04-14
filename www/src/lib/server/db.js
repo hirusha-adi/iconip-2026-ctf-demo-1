@@ -343,6 +343,27 @@ export async function consumePasswordResetToken(tokenHash) {
   return { ok: true, email: data.email, clerkUserId: data.clerk_user_id };
 }
 
+export async function addChatMessage({ sessionId, clerkUserId, role, content }) {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .insert({
+      session_id: sessionId,
+      clerk_user_id: clerkUserId,
+      role,
+      content,
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 export async function createChatSession(clerkUserId, title = 'New session') {
   const supabase = getSupabaseAdmin();
 
