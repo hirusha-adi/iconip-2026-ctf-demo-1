@@ -1,0 +1,58 @@
+This project uses NextJS as it's web framework. It uses javascript and NOT typescript. Below is informaiton about the tech stack.
+- Frontend: TailwindCSS, DaisyUI, react-toastify
+- Backend: Supabase
+- Authentication: Clerk
+- Emails: Resend
+
+These are the pages it should have:
+- `/` 
+    - The home page. 
+    - This page should display a huge title that says "ICOPNIC 2026: CTF". 
+    - More information about what ICONIC 2026 is can be found here: https://www.iconip2026.org/
+    - If the user is logged in, redirect them to `/chat`.
+- `/login`
+    - The login page. 
+    - This page should have the login form that has two input fields: email and password. The logging in should be handled properly with nextjs, clerk and supabase.
+    - Only users that has verified their accounts can log in. Otherwise, prompt to send a verification email again.
+    - When logged in, this should take you to `/chat`.
+- `register`
+    - Ask for the first name, last name, email, password and the password again for double validation with a register button.
+    - When the user registers, send a verification email and replace the page's content with "Check your inbox".
+    - When this verification email is pressed, take them again to the `/login` page.
+    - If the user is already logged in, take them to `/chat`.
+- `/logout`
+    - Only logged in users should be able to access this.
+    - Logout safely and ensure to devalidate the token accordingly. 
+- `/chat`
+    - This page can only be accessed by logged in users. 
+    - This page will have a chat window, just like any other chat application. The mesages the user sends should be to the right hand side and the messages that the user recieves should be to the left hand side. Users messages should be in green color and the messages that the user recieves should be in green color. The chat component should feel very reactive.
+    - This page is to let the user speak with an AI chat bot. For now, make the chat bot's response function just say "Hello World" back.
+    - All of the user's messages, along with the responses recieved should be logged in supabase.
+    - The user should have the ability to end the current session with the AI and start a new session. 
+    - The user should also have the ability to switch back and forth between the different chat sessions.
+- `/admin/*`
+    - These are all the admin routes. 
+    - Each user account should have an is_admin property.
+    - If this propery is set to true, the user should be able to access all these routes.
+    - Otherwise, they will get taken to `/404`.
+- `/admin/users`
+    - Takes you to `/admin/users/all`.
+- `/admin/users/all`
+    - This should list out all the users in a table. Each row show have information about one user with a button to view more information about this user.
+    - It should also show all the users that are online as well as the total number of users that are registered.
+    - Show other user stats as well.
+- `/admin/users/USER_ID`
+    - See detailed information about this user, along with the chat history of all of the sessions from `/chat`.
+    - All the other information that was logged, such as login times, user agents, attempts to access routes that does not exist, etc...
+    - Other controls for the user, such as to manually validate a user account, de-validate a user account, disable a user account, preventing them from logging in. There should not be a delete feature, instead, there should be a disable feature.
+    - The admins should have full rights to edit the user's information, but there should be a log of all the changes that were made to the user's account, along with the admin that made those changes and the time that those changes were made.
+    - When pressed on the user's profile, there should also be a button to change this user to an admin as well, and also to un-admin them.
+- All other invalid routes should get redirected to `/404`.
+- `/404`
+    - Tell that this page does not exist and have a button to take the user back home
+
+Things to keep in mind:
+- Both the frontend and the backend is handled by nextjs.
+- Make sure that backend code will not be shipped to the frontend.
+- Only 1 verification email can be sent for each 5 minutes.
+- No actual data should be deleted. Data should only be soft deleted.
