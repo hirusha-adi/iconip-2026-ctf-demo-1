@@ -1,21 +1,19 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { useSignIn } from "@clerk/nextjs";
-import { toast } from "react-toastify";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useSignIn } from '@clerk/nextjs';
+import { toast } from 'react-toastify';
 
-const MFA_TOTP = "totp";
-const MFA_EMAIL_CODE = "email_code";
-const MFA_BACKUP_CODE = "backup_code";
+const MFA_EMAIL_CODE = 'email_code';
 
 function isClerkTestEmail(value) {
   if (!value) {
     return false;
   }
 
-  return value.toLowerCase().includes("+clerk_test@");
+  return value.toLowerCase().includes('+clerk_test@');
 }
 
 function getErrorMessage(error, fallback) {
@@ -38,66 +36,50 @@ function getErrorMessage(error, fallback) {
   return fallback;
 }
 
-function pickDefaultSecondFactor(factors) {
-  const strategies = new Set((factors || []).map((factor) => factor.strategy));
-
-  if (strategies.has(MFA_TOTP)) {
-    return MFA_TOTP;
-  }
-
-  if (strategies.has(MFA_EMAIL_CODE)) {
-    return MFA_EMAIL_CODE;
-  }
-
-  if (strategies.has(MFA_BACKUP_CODE)) {
-    return MFA_BACKUP_CODE;
-  }
-
-  return "";
+function supportsEmailSecondFactor(factors) {
+  return (factors || []).some((factor) => factor.strategy === MFA_EMAIL_CODE);
 }
 
-export default function LoginForm({ initialMessage = "", nextPath = "" }) {
+export default function LoginForm({ initialMessage = '', nextPath = '' }) {
   const router = useRouter();
   const { signIn, fetchStatus } = useSignIn();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(initialMessage);
   const [canResend, setCanResend] = useState(false);
 
-  const [stage, setStage] = useState("password");
-  const [availableSecondFactors, setAvailableSecondFactors] = useState([]);
-  const [selectedSecondFactor, setSelectedSecondFactor] = useState("");
-  const [secondFactorCode, setSecondFactorCode] = useState("");
-  const [secondFactorInfo, setSecondFactorInfo] = useState("");
+  const [stage, setStage] = useState('password');
+  const [secondFactorCode, setSecondFactorCode] = useState('');
+  const [secondFactorInfo, setSecondFactorInfo] = useState('');
 
-  const isBusy = fetchStatus === "fetching";
+  const isBusy = fetchStatus === 'fetching';
 
   const verifiedMessage = useMemo(() => {
     if (initialMessage) {
       return initialMessage;
     }
 
-    return "";
+    return '';
   }, [initialMessage]);
 
   async function handleResendVerification() {
     try {
-      const response = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data.error || "Failed to resend verification email");
+        throw new Error(data.error || 'Failed to resend verification email');
       }
 
-      toast.success("Verification email sent");
+      toast.success('Verification email sent');
       setCanResend(false);
     } catch (resendError) {
-      toast.error(resendError.message || "Failed to resend verification email");
+      toast.error(resendError.message || 'Failed to resend verification email');
     }
   }
 
@@ -106,12 +88,12 @@ export default function LoginForm({ initialMessage = "", nextPath = "" }) {
       return;
     }
 
-    const destination = nextPath || "/chat";
+    const destination = nextPath || '/chat';
 
     const { error: finalizeError } = await signIn.finalize({
       navigate: ({ decorateUrl }) => {
         const url = decorateUrl(destination);
-        if (url.startsWith("http")) {
+        if (url.startsWith('http')) {
           window.location.href = url;
           return;
         }
@@ -121,36 +103,32 @@ export default function LoginForm({ initialMessage = "", nextPath = "" }) {
     });
 
     if (finalizeError) {
-      setError(getErrorMessage(finalizeError, "Failed to finalize sign in"));
+      setError(getErrorMessage(finalizeError, 'Failed to finalize sign in'));
       return;
     }
 
-    await fetch("/api/auth/login-audit", {
-      method: "POST",
+    await fetch('/api/auth/login-audit', {
+      method: 'POST',
     });
   }
 
-  async function sendSecondFactorCodeIfNeeded(factor) {
-    if (!signIn || factor !== MFA_EMAIL_CODE) {
+  async function sendSecondFactorCode() {
+    if (!signIn) {
       return;
     }
 
     const { error: sendError } = await signIn.mfa.sendEmailCode();
     if (sendError) {
-      throw new Error(
-        getErrorMessage(sendError, "Failed to send second-factor code"),
-      );
+      throw new Error(getErrorMessage(sendError, 'Failed to send second-factor code'));
     }
 
     if (isClerkTestEmail(email)) {
-      console.log("[dev][login][mfa] Clerk test email OTP code: 424242");
+      console.log('[dev][login][mfa] Clerk test email OTP code: 424242');
     } else {
-      console.log(
-        "[dev][login][mfa] OTP email sent. Clerk does not expose the real OTP code to app code.",
-      );
+      console.log('[dev][login][mfa] OTP email sent. Clerk does not expose the real OTP code to app code.');
     }
 
-    setSecondFactorInfo("We sent a second-factor email code. Enter it below.");
+    setSecondFactorInfo('We sent a verification code to your email. Enter it below.');
   }
 
   async function moveToSecondFactorState() {
@@ -159,46 +137,41 @@ export default function LoginForm({ initialMessage = "", nextPath = "" }) {
     }
 
     const factors = signIn.supportedSecondFactors || [];
-    const factor = pickDefaultSecondFactor(factors);
 
-    if (!factor) {
-      setError(
-        "No supported second-factor method is available for this account.",
-      );
+    if (!supportsEmailSecondFactor(factors)) {
+      setError('Email second-factor is required, but this account does not have email MFA available.');
       return;
     }
 
-    setAvailableSecondFactors(factors);
-    setSelectedSecondFactor(factor);
-    setStage("second-factor");
-    setSecondFactorCode("");
-    setSecondFactorInfo("");
+    setStage('second-factor');
+    setSecondFactorCode('');
+    setSecondFactorInfo('');
 
-    await sendSecondFactorCodeIfNeeded(factor);
+    await sendSecondFactorCode();
   }
 
   async function handlePasswordSubmit(event) {
     event.preventDefault();
-    setError("");
+    setError('');
     setCanResend(false);
 
     try {
       if (!signIn) {
-        setError("Authentication is still initializing. Please try again.");
+        setError('Authentication is still initializing. Please try again.');
         return;
       }
 
-      const precheckResponse = await fetch("/api/auth/prelogin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const precheckResponse = await fetch('/api/auth/prelogin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       if (!precheckResponse.ok) {
         const payload = await precheckResponse.json().catch(() => ({}));
-        setError(payload.message || payload.error || "Login blocked");
+        setError(payload.message || payload.error || 'Login blocked');
 
-        if (payload.reason === "unverified") {
+        if (payload.reason === 'unverified') {
           setCanResend(true);
         }
 
@@ -211,100 +184,59 @@ export default function LoginForm({ initialMessage = "", nextPath = "" }) {
       });
 
       if (signInError) {
-        setError(getErrorMessage(signInError, "Invalid credentials"));
+        setError(getErrorMessage(signInError, 'Invalid credentials'));
         return;
       }
 
-      if (signIn.status === "complete") {
-        await finishLogin();
-        return;
-      }
-
-      if (signIn.status === "needs_second_factor") {
+      if (signIn.status === 'needs_second_factor') {
         await moveToSecondFactorState();
         return;
       }
 
-      setError("Login could not be completed. Please try again.");
+      if (signIn.status === 'complete') {
+        setError('Email MFA is required. Enable email second-factor in Clerk to complete login.');
+        return;
+      }
+
+      setError('Login could not be completed. Please try again.');
     } catch (submitError) {
-      setError(submitError.message || "Failed to sign in");
+      setError(submitError.message || 'Failed to sign in');
     }
   }
 
   async function handleSecondFactorSubmit(event) {
     event.preventDefault();
-    setError("");
+    setError('');
 
     if (!signIn || !secondFactorCode.trim()) {
       return;
     }
 
     try {
-      let actionError = null;
-
-      if (selectedSecondFactor === MFA_TOTP) {
-        const response = await signIn.mfa.verifyTOTP({
-          code: secondFactorCode.trim(),
-        });
-        actionError = response.error;
-      } else if (selectedSecondFactor === MFA_EMAIL_CODE) {
-        const response = await signIn.mfa.verifyEmailCode({
-          code: secondFactorCode.trim(),
-        });
-        actionError = response.error;
-      } else if (selectedSecondFactor === MFA_BACKUP_CODE) {
-        const response = await signIn.mfa.verifyBackupCode({
-          code: secondFactorCode.trim(),
-        });
-        actionError = response.error;
-      } else {
-        setError("Unsupported second-factor method selected.");
+      const response = await signIn.mfa.verifyEmailCode({ code: secondFactorCode.trim() });
+      if (response.error) {
+        setError(getErrorMessage(response.error, 'Second-factor verification failed'));
         return;
       }
 
-      if (actionError) {
-        setError(
-          getErrorMessage(actionError, "Second-factor verification failed"),
-        );
-        return;
-      }
-
-      if (signIn.status === "complete") {
+      if (signIn.status === 'complete') {
         await finishLogin();
         return;
       }
 
-      setError(
-        "Second-factor verification did not complete. Please try again.",
-      );
+      setError('Second-factor verification did not complete. Please try again.');
     } catch (submitError) {
-      setError(submitError.message || "Failed to verify second factor");
-    }
-  }
-
-  async function handleSecondFactorMethodChange(event) {
-    const nextMethod = event.target.value;
-    setSelectedSecondFactor(nextMethod);
-    setSecondFactorInfo("");
-    setError("");
-
-    try {
-      await sendSecondFactorCodeIfNeeded(nextMethod);
-    } catch (sendError) {
-      setError(
-        sendError.message || "Failed to initialize second-factor method",
-      );
+      setError(submitError.message || 'Failed to verify second factor');
     }
   }
 
   async function resendSecondFactorEmailCode() {
-    setError("");
+    setError('');
     try {
-      console.log(MFA_EMAIL_CODE);
-      await sendSecondFactorCodeIfNeeded(MFA_EMAIL_CODE);
-      toast.success("Second-factor email code sent");
+      await sendSecondFactorCode();
+      toast.success('Verification code sent');
     } catch (sendError) {
-      setError(sendError.message || "Failed to resend second-factor code");
+      setError(sendError.message || 'Failed to resend verification code');
     }
   }
 
@@ -313,12 +245,10 @@ export default function LoginForm({ initialMessage = "", nextPath = "" }) {
       <h1 className="text-2xl font-semibold text-zinc-900">Login</h1>
       <p className="mt-1 text-sm text-zinc-600">Sign in to continue to chat.</p>
 
-      {verifiedMessage ? (
-        <p className="mt-4 text-sm text-green-700">{verifiedMessage}</p>
-      ) : null}
+      {verifiedMessage ? <p className="mt-4 text-sm text-green-700">{verifiedMessage}</p> : null}
       {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
-      {stage === "password" ? (
+      {stage === 'password' ? (
         <form className="mt-4 space-y-4" onSubmit={handlePasswordSubmit}>
           <label className="block text-sm text-zinc-700" htmlFor="email">
             Email
@@ -349,51 +279,15 @@ export default function LoginForm({ initialMessage = "", nextPath = "" }) {
             className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isBusy}
           >
-            {isBusy ? "Signing in..." : "Login"}
+            {isBusy ? 'Signing in...' : 'Login'}
           </button>
         </form>
       ) : (
         <form className="mt-4 space-y-4" onSubmit={handleSecondFactorSubmit}>
-          <p className="text-sm text-zinc-600">
-            Second-factor verification is required.
-          </p>
+          <p className="text-sm text-zinc-600">Email verification code is required.</p>
+          {secondFactorInfo ? <p className="text-xs text-zinc-500">{secondFactorInfo}</p> : null}
 
-          <label
-            className="block text-sm text-zinc-700"
-            htmlFor="secondFactorMethod"
-          >
-            Method
-            <select
-              id="secondFactorMethod"
-              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-              value={selectedSecondFactor}
-              onChange={handleSecondFactorMethodChange}
-            >
-              {availableSecondFactors.map((factor, index) => (
-                <option
-                  key={`${factor.strategy}-${index}`}
-                  value={factor.strategy}
-                >
-                  {factor.strategy === MFA_TOTP
-                    ? "Authenticator app (TOTP)"
-                    : factor.strategy === MFA_EMAIL_CODE
-                      ? "Email code"
-                      : factor.strategy === MFA_BACKUP_CODE
-                        ? "Backup code"
-                        : factor.strategy}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {secondFactorInfo ? (
-            <p className="text-xs text-zinc-500">{secondFactorInfo}</p>
-          ) : null}
-
-          <label
-            className="block text-sm text-zinc-700"
-            htmlFor="secondFactorCode"
-          >
+          <label className="block text-sm text-zinc-700" htmlFor="secondFactorCode">
             Code
             <input
               id="secondFactorCode"
@@ -405,22 +299,20 @@ export default function LoginForm({ initialMessage = "", nextPath = "" }) {
             />
           </label>
 
-          {selectedSecondFactor === MFA_EMAIL_CODE ? (
-            <button
-              type="button"
-              className="text-xs font-medium text-green-700 hover:text-green-800"
-              onClick={resendSecondFactorEmailCode}
-            >
-              Resend second-factor email code
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="text-xs font-medium text-green-700 hover:text-green-800"
+            onClick={resendSecondFactorEmailCode}
+          >
+            Resend verification code
+          </button>
 
           <button
             type="submit"
             className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isBusy || !secondFactorCode.trim()}
           >
-            {isBusy ? "Verifying..." : "Verify code"}
+            {isBusy ? 'Verifying...' : 'Verify code'}
           </button>
 
           <button
@@ -430,11 +322,10 @@ export default function LoginForm({ initialMessage = "", nextPath = "" }) {
               if (signIn) {
                 await signIn.reset();
               }
-              setStage("password");
-              setSecondFactorCode("");
-              setSecondFactorInfo("");
-              setAvailableSecondFactors([]);
-              setSelectedSecondFactor("");
+
+              setStage('password');
+              setSecondFactorCode('');
+              setSecondFactorInfo('');
             }}
           >
             Back to password
@@ -453,7 +344,7 @@ export default function LoginForm({ initialMessage = "", nextPath = "" }) {
       ) : null}
 
       <p className="mt-4 text-sm text-zinc-600">
-        Need an account?{" "}
+        Need an account?{' '}
         <Link className="text-green-700 hover:underline" href="/register">
           Register
         </Link>

@@ -13,9 +13,8 @@ This is a Next.js 16 (App Router) project with:
 - `/login` email/password login with verified-only check and resend verification flow
 - `/register` first/last/email/password/password-confirm and "Check your inbox" state
 - `/logout` protected signout
-- `/setup-totp` post-verification and account MFA setup route
 - `/chat` protected chat with sessions, switching, ending sessions, and persisted messages
-- `/user` authenticated self-service account page (name/password/TOTP/backup codes)
+- `/user` authenticated self-service account page (name/password)
 - `/admin/*` protected admin routes (requires `is_admin`)
 - `/admin/users` -> `/admin/users/all`
 - `/admin/users/all` user table + stats
@@ -49,5 +48,5 @@ npm run dev
 
 - Server-only backend logic is in `src/lib/server/*` and is not shipped to the client.
 - Verification resend is rate-limited to one request per 5 minutes per email.
-- Login supports second-factor handling (`email_code`, `totp`, `backup_code`) when required by Clerk.
+- Login supports email-code second-factor handling (`email_code`) from Clerk.
 - No hard-delete path is implemented; records use soft-delete columns where relevant.

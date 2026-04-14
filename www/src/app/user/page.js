@@ -4,7 +4,7 @@ import UserSettingsClient from '@/components/UserSettingsClient';
 import { requirePageUser } from '@/lib/server/authz';
 
 export default async function UserPage() {
-  const { profile } = await requirePageUser({ requireTotp: false });
+  const { profile } = await requirePageUser();
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6">

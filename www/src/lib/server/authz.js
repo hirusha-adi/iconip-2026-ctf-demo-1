@@ -3,7 +3,6 @@ import 'server-only';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 
-import { getClerkUserById } from '@/lib/server/clerk';
 import { getProfileByClerkId, touchLastSeen } from '@/lib/server/db';
 
 export async function getCurrentAuth() {
@@ -20,8 +19,7 @@ export async function getCurrentUserProfile() {
   return getProfileByClerkId(userId);
 }
 
-export async function requirePageUser(options = {}) {
-  const requireTotp = options.requireTotp ?? false;
+export async function requirePageUser() {
   const { userId } = await getCurrentAuth();
 
   if (!userId) {
@@ -34,25 +32,13 @@ export async function requirePageUser(options = {}) {
     redirect('/login');
   }
 
-  if (requireTotp) {
-    try {
-      const clerkUser = await getClerkUserById(userId);
-      if (!clerkUser?.totpEnabled) {
-        redirect('/setup-totp');
-      }
-    } catch (error) {
-      console.error('Failed to read Clerk user 2FA status:', error);
-      redirect('/setup-totp');
-    }
-  }
-
   await touchLastSeen(userId, false);
 
   return { userId, profile };
 }
 
 export async function requirePageAdmin() {
-  const { userId, profile } = await requirePageUser({ requireTotp: true });
+  const { userId, profile } = await requirePageUser();
 
   if (!profile.is_admin) {
     redirect('/404');

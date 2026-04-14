@@ -1,21 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'react-toastify';
 
-function formatCodes(codes) {
-  if (!Array.isArray(codes)) {
-    return '';
-  }
-
-  return codes.join('\n');
-}
-
 export default function UserSettingsClient({ initialFirstName = '', initialLastName = '', initialEmail = '' }) {
-  const router = useRouter();
   const { isLoaded, isSignedIn, user } = useUser();
 
   const [firstName, setFirstName] = useState(initialFirstName);
@@ -23,7 +13,6 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [backupCodes, setBackupCodes] = useState([]);
   const [busy, setBusy] = useState('');
 
   async function syncProfile(profile) {
@@ -97,43 +86,6 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
     }
   }
 
-  async function handleRegenerateBackupCodes() {
-    if (!user) {
-      return;
-    }
-
-    setBusy('backup');
-
-    try {
-      const resource = await user.createBackupCode();
-      setBackupCodes(resource?.codes || []);
-      toast.success('Generated new backup codes');
-    } catch (error) {
-      toast.error(error?.errors?.[0]?.longMessage || error?.message || 'Failed to generate backup codes');
-    } finally {
-      setBusy('');
-    }
-  }
-
-  async function handleResetTotp() {
-    if (!user) {
-      return;
-    }
-
-    setBusy('reset-totp');
-
-    try {
-      await user.disableTOTP();
-      await user.reload();
-      toast.success('TOTP reset. Please configure again.');
-      router.push('/setup-totp');
-    } catch (error) {
-      toast.error(error?.errors?.[0]?.longMessage || error?.message || 'Failed to reset TOTP');
-    } finally {
-      setBusy('');
-    }
-  }
-
   if (!isLoaded) {
     return <p className="text-sm text-zinc-500">Loading...</p>;
   }
@@ -154,7 +106,7 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
     <div className="w-full max-w-3xl space-y-4">
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-semibold text-zinc-900">User Settings</h1>
-        <p className="mt-1 text-sm text-zinc-600">Manage your profile, password, and MFA.</p>
+        <p className="mt-1 text-sm text-zinc-600">Manage your profile and password.</p>
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -245,45 +197,10 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-zinc-900">Two-Factor Authentication</h2>
-        <p className="mt-1 text-sm text-zinc-600">TOTP status: {user.totpEnabled ? 'Enabled' : 'Disabled'}</p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {!user.totpEnabled ? (
-            <button
-              type="button"
-              className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-              onClick={() => router.push('/setup-totp')}
-            >
-              Set up TOTP
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
-              onClick={handleResetTotp}
-              disabled={busy === 'reset-totp'}
-            >
-              {busy === 'reset-totp' ? 'Resetting...' : 'Reset TOTP'}
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60"
-            onClick={handleRegenerateBackupCodes}
-            disabled={busy === 'backup' || !user.totpEnabled}
-          >
-            {busy === 'backup' ? 'Generating...' : 'Re-download backup keys'}
-          </button>
-        </div>
-
-        {backupCodes.length ? (
-          <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3">
-            <p className="text-xs font-medium text-zinc-700">Backup codes</p>
-            <pre className="mt-2 whitespace-pre-wrap text-xs text-zinc-700">{formatCodes(backupCodes)}</pre>
-          </div>
-        ) : null}
+        <h2 className="text-lg font-semibold text-zinc-900">Email MFA</h2>
+        <p className="mt-1 text-sm text-zinc-600">
+          Login requires email verification code as second factor based on your Clerk instance settings.
+        </p>
       </section>
     </div>
   );

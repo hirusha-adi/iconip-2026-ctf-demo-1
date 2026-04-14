@@ -5,7 +5,7 @@ import { createChatSession, getChatMessages, getUserChatSessions } from '@/lib/s
 import { requirePageUser } from '@/lib/server/authz';
 
 export default async function ChatPage() {
-  const { userId, profile } = await requirePageUser({ requireTotp: true });
+  const { userId, profile } = await requirePageUser();
 
   let sessions = await getUserChatSessions(userId);
 

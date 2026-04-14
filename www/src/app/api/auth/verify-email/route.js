@@ -9,14 +9,14 @@ export async function GET(request) {
     const token = url.searchParams.get('token');
 
     if (!token) {
-      return NextResponse.redirect(new URL('/setup-totp?verified=missing_token', request.url));
+      return NextResponse.redirect(new URL('/login?verified=missing_token', request.url));
     }
 
     const tokenHash = hashToken(token);
     const result = await consumeEmailVerificationToken(tokenHash);
 
     if (!result.ok) {
-      return NextResponse.redirect(new URL(`/setup-totp?verified=${result.reason}`, request.url));
+      return NextResponse.redirect(new URL(`/login?verified=${result.reason}`, request.url));
     }
 
     const updatedProfile = await setProfileVerified(result.email, true);
@@ -27,9 +27,9 @@ export async function GET(request) {
       eventType: 'verify_email_success',
     });
 
-    return NextResponse.redirect(new URL('/setup-totp?verified=success', request.url));
+    return NextResponse.redirect(new URL('/login?verified=success', request.url));
   } catch (error) {
     console.error('Email verification failed:', error);
-    return NextResponse.redirect(new URL('/setup-totp?verified=error', request.url));
+    return NextResponse.redirect(new URL('/login?verified=error', request.url));
   }
 }

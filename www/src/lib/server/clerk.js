@@ -20,11 +20,6 @@ export async function safeUpdateClerkUser(userId, data) {
   }
 }
 
-export async function getClerkUserById(userId) {
-  const client = await getClerkClient();
-  return client.users.getUser(userId);
-}
-
 export async function safeSetDisabledState(userId, shouldDisable) {
   const client = await getClerkClient();
 
