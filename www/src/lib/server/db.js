@@ -246,6 +246,103 @@ export async function consumeEmailVerificationToken(tokenHash) {
   return { ok: true, email: data.email };
 }
 
+export async function canSendPasswordResetEmail(email) {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('password_reset_email_events')
+    .select('sent_at')
+    .eq('email', normalizeEmail(email))
+    .order('sent_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error && !isNoRowsError(error)) {
+    throw error;
+  }
+
+  if (!data?.sent_at) {
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  const elapsed = Date.now() - new Date(data.sent_at).getTime();
+  if (elapsed >= FIVE_MINUTES_IN_MS) {
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  return {
+    allowed: false,
+    retryAfterSeconds: Math.ceil((FIVE_MINUTES_IN_MS - elapsed) / 1000),
+  };
+}
+
+export async function recordPasswordResetEmailSent(email) {
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase.from('password_reset_email_events').insert({
+    email: normalizeEmail(email),
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function createPasswordResetToken({ email, clerkUserId, tokenHash }) {
+  const supabase = getSupabaseAdmin();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+  const { error } = await supabase.from('password_reset_tokens').insert({
+    email: normalizeEmail(email),
+    clerk_user_id: clerkUserId,
+    token_hash: tokenHash,
+    expires_at: expiresAt,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function consumePasswordResetToken(tokenHash) {
+  const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('password_reset_tokens')
+    .select('id, email, clerk_user_id, expires_at, consumed_at')
+    .eq('token_hash', tokenHash)
+    .maybeSingle();
+
+  if (error && !isNoRowsError(error)) {
+    throw error;
+  }
+
+  if (!data) {
+    return { ok: false, reason: 'invalid' };
+  }
+
+  if (data.consumed_at) {
+    return { ok: false, reason: 'already_used' };
+  }
+
+  if (new Date(data.expires_at).getTime() < Date.now()) {
+    return { ok: false, reason: 'expired' };
+  }
+
+  const { error: updateError } = await supabase
+    .from('password_reset_tokens')
+    .update({ consumed_at: now })
+    .eq('id', data.id)
+    .is('consumed_at', null);
+
+  if (updateError) {
+    throw updateError;
+  }
+
+  return { ok: true, email: data.email, clerkUserId: data.clerk_user_id };
+}
+
 export async function createChatSession(clerkUserId, title = 'New session') {
   const supabase = getSupabaseAdmin();
 

@@ -47,6 +47,22 @@ create table if not exists public.verification_email_events (
   sent_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.password_reset_tokens (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  clerk_user_id text references public.profiles(clerk_user_id),
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  consumed_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.password_reset_email_events (
+  id bigserial primary key,
+  email text not null,
+  sent_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.chat_sessions (
   id uuid primary key default gen_random_uuid(),
   clerk_user_id text not null references public.profiles(clerk_user_id),
@@ -108,6 +124,9 @@ create index if not exists idx_route_logs_user on public.route_access_logs (cler
 create index if not exists idx_route_logs_status on public.route_access_logs (status, created_at desc);
 create index if not exists idx_verification_email_events_email on public.verification_email_events (email, sent_at desc);
 create index if not exists idx_email_verification_tokens_email on public.email_verification_tokens (email, created_at desc);
+create index if not exists idx_password_reset_tokens_email on public.password_reset_tokens (email, created_at desc);
+create index if not exists idx_password_reset_tokens_user on public.password_reset_tokens (clerk_user_id, created_at desc);
+create index if not exists idx_password_reset_email_events_email on public.password_reset_email_events (email, sent_at desc);
 create index if not exists idx_admin_audit_target on public.admin_audit_logs (target_user_id, created_at desc);
 
 drop trigger if exists trg_profiles_updated_at on public.profiles;
@@ -125,6 +144,8 @@ execute function public.set_updated_at();
 alter table public.profiles enable row level security;
 alter table public.email_verification_tokens enable row level security;
 alter table public.verification_email_events enable row level security;
+alter table public.password_reset_tokens enable row level security;
+alter table public.password_reset_email_events enable row level security;
 alter table public.chat_sessions enable row level security;
 alter table public.chat_messages enable row level security;
 alter table public.auth_events enable row level security;
@@ -135,6 +156,8 @@ alter table public.admin_audit_logs enable row level security;
 revoke all on public.profiles from anon, authenticated;
 revoke all on public.email_verification_tokens from anon, authenticated;
 revoke all on public.verification_email_events from anon, authenticated;
+revoke all on public.password_reset_tokens from anon, authenticated;
+revoke all on public.password_reset_email_events from anon, authenticated;
 revoke all on public.chat_sessions from anon, authenticated;
 revoke all on public.chat_messages from anon, authenticated;
 revoke all on public.auth_events from anon, authenticated;

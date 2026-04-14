@@ -36,6 +36,7 @@ export async function sendVerificationEmail({ email, token }) {
     to: payload.to,
     from: payload.from,
     subject: payload.subject,
+    verifyUrl: verifyUrl,
   });
 
   try {
@@ -49,7 +50,59 @@ export async function sendVerificationEmail({ email, token }) {
     });
 
     if (result?.error) {
-      throw new Error(result.error.message || "Email provider returned an error");
+      throw new Error(
+        result.error.message || "Email provider returned an error",
+      );
+    }
+  } catch (error) {
+    console.error("[email] failed", {
+      to: payload.to,
+      subject: payload.subject,
+      error: error?.message || error,
+    });
+    throw error;
+  }
+}
+
+export async function sendPasswordResetEmail({ email, token }) {
+  const resetUrl = `${APP_BASE_URL}/reset-password?token=${token}`;
+
+  const payload = {
+    from: env.RESEND_FROM_EMAIL,
+    to: email,
+    subject: "Reset your ICONIP 2026 CTF password",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2>Reset your password</h2>
+        <p>Click the link below to choose a new password:</p>
+        <p><a href="${resetUrl}">Reset password</a></p>
+        <p>This link expires in 1 hour.</p>
+      </div>
+    `,
+    text: `Reset your password by visiting: ${resetUrl}`,
+  };
+
+  console.log("[email] sending", {
+    to: payload.to,
+    from: payload.from,
+    subject: payload.subject,
+    verifyUrl: resetUrl,
+  });
+
+  try {
+    const result = await getResend().emails.send(payload);
+
+    console.log("[email] sent", {
+      to: payload.to,
+      subject: payload.subject,
+      id: result?.data?.id ?? null,
+      error: result?.error ?? null,
+    });
+
+    if (result?.error) {
+      throw new Error(
+        result.error.message || "Email provider returned an error",
+      );
     }
   } catch (error) {
     console.error("[email] failed", {

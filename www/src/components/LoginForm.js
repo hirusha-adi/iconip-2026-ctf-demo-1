@@ -279,6 +279,12 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
             </div>
           </label>
 
+          <div className="flex justify-end">
+            <Link className="cyber-link text-xs" href="/forgot-password">
+              Forgot password?
+            </Link>
+          </div>
+
           <button
             type="submit"
             className="cyber-btn cyber-btn-solid w-full"

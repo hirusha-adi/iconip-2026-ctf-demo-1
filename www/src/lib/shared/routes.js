@@ -1,6 +1,8 @@
 export const VALID_STATIC_ROUTES = new Set([
   '/',
   '/login',
+  '/forgot-password',
+  '/reset-password',
   '/register',
   '/logout',
   '/user',

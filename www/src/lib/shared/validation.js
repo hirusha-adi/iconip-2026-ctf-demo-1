@@ -22,6 +22,21 @@ export const resendVerificationSchema = z.object({
   email: z.string().trim().email('Enter a valid email address'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email('Enter a valid email address'),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().trim().min(1, 'Reset token is required'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string().min(8, 'Confirm password is required'),
+  })
+  .refine((value) => value.password === value.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match',
+  });
+
 export const chatMessageSchema = z.object({
   sessionId: z.string().uuid('Invalid session id'),
   content: z.string().trim().min(1, 'Message cannot be empty').max(4000, 'Message is too long'),
