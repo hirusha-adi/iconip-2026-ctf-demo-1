@@ -3,6 +3,8 @@ export const VALID_STATIC_ROUTES = new Set([
   '/login',
   '/register',
   '/logout',
+  '/setup-totp',
+  '/user',
   '/chat',
   '/admin',
   '/admin/users',

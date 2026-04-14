@@ -606,6 +606,29 @@ export async function updateUserByAdmin({ actorUserId, targetUserId, updates }) 
   return updated;
 }
 
+export async function syncUserProfileFromClerk({ clerkUserId, firstName, lastName, email }) {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      first_name: firstName,
+      last_name: lastName,
+      email: normalizeEmail(email),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('clerk_user_id', clerkUserId)
+    .is('deleted_at', null)
+    .select('*')
+    .maybeSingle();
+
+  if (error && !isNoRowsError(error)) {
+    throw error;
+  }
+
+  return data ?? null;
+}
+
 export async function countInvalidRouteAttempts(clerkUserId) {
   const supabase = getSupabaseAdmin();
 

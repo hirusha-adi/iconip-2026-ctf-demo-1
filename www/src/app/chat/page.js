@@ -5,7 +5,7 @@ import { createChatSession, getChatMessages, getUserChatSessions } from '@/lib/s
 import { requirePageUser } from '@/lib/server/authz';
 
 export default async function ChatPage() {
-  const { userId, profile } = await requirePageUser();
+  const { userId, profile } = await requirePageUser({ requireTotp: true });
 
   let sessions = await getUserChatSessions(userId);
 
@@ -25,6 +25,9 @@ export default async function ChatPage() {
           <p className="text-xs text-zinc-500">Chat sessions are stored in Supabase.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100" href="/user">
+            User
+          </Link>
           {profile.is_admin ? (
             <Link className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100" href="/admin/users/all">
               Admin

@@ -23,18 +23,20 @@ function getVerificationMessage(status) {
 }
 
 export default async function LoginPage({ searchParams }) {
+  const query = await searchParams;
+  const rawNextPath = typeof query.next === 'string' ? query.next : '';
+  const nextPath = rawNextPath.startsWith('/') && !rawNextPath.startsWith('//') ? rawNextPath : '';
   const { userId } = await auth();
 
   if (userId) {
-    redirect('/chat');
+    redirect(nextPath || '/chat');
   }
 
-  const query = await searchParams;
   const verificationStatus = typeof query.verified === 'string' ? query.verified : '';
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center px-6 py-14">
-      <LoginForm initialMessage={getVerificationMessage(verificationStatus)} />
+      <LoginForm initialMessage={getVerificationMessage(verificationStatus)} nextPath={nextPath} />
     </main>
   );
 }

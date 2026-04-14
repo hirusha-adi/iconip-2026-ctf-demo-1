@@ -6,16 +6,49 @@ import { useMemo, useState } from 'react';
 import { useSignIn } from '@clerk/nextjs';
 import { toast } from 'react-toastify';
 
-async function parseResponse(response) {
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.error || 'Request failed');
+const MFA_TOTP = 'totp';
+const MFA_EMAIL_CODE = 'email_code';
+const MFA_BACKUP_CODE = 'backup_code';
+
+function getErrorMessage(error, fallback) {
+  if (!error) {
+    return fallback;
   }
 
-  return data;
+  if (error.longMessage) {
+    return error.longMessage;
+  }
+
+  if (error.message) {
+    return error.message;
+  }
+
+  if (Array.isArray(error.errors) && error.errors.length) {
+    return error.errors[0]?.longMessage || error.errors[0]?.message || fallback;
+  }
+
+  return fallback;
 }
 
-export default function LoginForm({ initialMessage = '' }) {
+function pickDefaultSecondFactor(factors) {
+  const strategies = new Set((factors || []).map((factor) => factor.strategy));
+
+  if (strategies.has(MFA_TOTP)) {
+    return MFA_TOTP;
+  }
+
+  if (strategies.has(MFA_EMAIL_CODE)) {
+    return MFA_EMAIL_CODE;
+  }
+
+  if (strategies.has(MFA_BACKUP_CODE)) {
+    return MFA_BACKUP_CODE;
+  }
+
+  return '';
+}
+
+export default function LoginForm({ initialMessage = '', nextPath = '' }) {
   const router = useRouter();
   const { signIn, fetchStatus } = useSignIn();
 
@@ -23,6 +56,12 @@ export default function LoginForm({ initialMessage = '' }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(initialMessage);
   const [canResend, setCanResend] = useState(false);
+
+  const [stage, setStage] = useState('password');
+  const [availableSecondFactors, setAvailableSecondFactors] = useState([]);
+  const [selectedSecondFactor, setSelectedSecondFactor] = useState('');
+  const [secondFactorCode, setSecondFactorCode] = useState('');
+  const [secondFactorInfo, setSecondFactorInfo] = useState('');
 
   const isBusy = fetchStatus === 'fetching';
 
@@ -42,15 +81,83 @@ export default function LoginForm({ initialMessage = '' }) {
         body: JSON.stringify({ email }),
       });
 
-      await parseResponse(response);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend verification email');
+      }
+
       toast.success('Verification email sent');
       setCanResend(false);
     } catch (resendError) {
-      toast.error(resendError.message);
+      toast.error(resendError.message || 'Failed to resend verification email');
     }
   }
 
-  async function handleSubmit(event) {
+  async function finishLogin() {
+    if (!signIn) {
+      return;
+    }
+
+    const destination = nextPath || '/chat';
+
+    const { error: finalizeError } = await signIn.finalize({
+      navigate: ({ decorateUrl }) => {
+        const url = decorateUrl(destination);
+        if (url.startsWith('http')) {
+          window.location.href = url;
+          return;
+        }
+
+        router.push(url);
+      },
+    });
+
+    if (finalizeError) {
+      setError(getErrorMessage(finalizeError, 'Failed to finalize sign in'));
+      return;
+    }
+
+    await fetch('/api/auth/login-audit', {
+      method: 'POST',
+    });
+  }
+
+  async function sendSecondFactorCodeIfNeeded(factor) {
+    if (!signIn || factor !== MFA_EMAIL_CODE) {
+      return;
+    }
+
+    const { error: sendError } = await signIn.mfa.sendEmailCode();
+    if (sendError) {
+      throw new Error(getErrorMessage(sendError, 'Failed to send second-factor code'));
+    }
+
+    setSecondFactorInfo('We sent a second-factor email code. Enter it below.');
+  }
+
+  async function moveToSecondFactorState() {
+    if (!signIn) {
+      return;
+    }
+
+    const factors = signIn.supportedSecondFactors || [];
+    const factor = pickDefaultSecondFactor(factors);
+
+    if (!factor) {
+      setError('No supported second-factor method is available for this account.');
+      return;
+    }
+
+    setAvailableSecondFactors(factors);
+    setSelectedSecondFactor(factor);
+    setStage('second-factor');
+    setSecondFactorCode('');
+    setSecondFactorInfo('');
+
+    await sendSecondFactorCodeIfNeeded(factor);
+  }
+
+  async function handlePasswordSubmit(event) {
     event.preventDefault();
     setError('');
     setCanResend(false);
@@ -84,38 +191,87 @@ export default function LoginForm({ initialMessage = '' }) {
       });
 
       if (signInError) {
-        setError(signInError.longMessage || signInError.message || 'Invalid credentials');
+        setError(getErrorMessage(signInError, 'Invalid credentials'));
         return;
       }
 
       if (signIn.status === 'complete') {
-        await signIn.finalize({
-          navigate: ({ session, decorateUrl }) => {
-            if (session?.currentTask) {
-              setError('Additional verification is required before continuing.');
-              return;
-            }
+        await finishLogin();
+        return;
+      }
 
-            const url = decorateUrl('/chat');
-            if (url.startsWith('http')) {
-              window.location.href = url;
-              return;
-            }
-
-            router.push(url);
-          },
-        });
-
-        await fetch('/api/auth/login-audit', {
-          method: 'POST',
-        });
-
+      if (signIn.status === 'needs_second_factor') {
+        await moveToSecondFactorState();
         return;
       }
 
       setError('Login could not be completed. Please try again.');
     } catch (submitError) {
       setError(submitError.message || 'Failed to sign in');
+    }
+  }
+
+  async function handleSecondFactorSubmit(event) {
+    event.preventDefault();
+    setError('');
+
+    if (!signIn || !secondFactorCode.trim()) {
+      return;
+    }
+
+    try {
+      let actionError = null;
+
+      if (selectedSecondFactor === MFA_TOTP) {
+        const response = await signIn.mfa.verifyTOTP({ code: secondFactorCode.trim() });
+        actionError = response.error;
+      } else if (selectedSecondFactor === MFA_EMAIL_CODE) {
+        const response = await signIn.mfa.verifyEmailCode({ code: secondFactorCode.trim() });
+        actionError = response.error;
+      } else if (selectedSecondFactor === MFA_BACKUP_CODE) {
+        const response = await signIn.mfa.verifyBackupCode({ code: secondFactorCode.trim() });
+        actionError = response.error;
+      } else {
+        setError('Unsupported second-factor method selected.');
+        return;
+      }
+
+      if (actionError) {
+        setError(getErrorMessage(actionError, 'Second-factor verification failed'));
+        return;
+      }
+
+      if (signIn.status === 'complete') {
+        await finishLogin();
+        return;
+      }
+
+      setError('Second-factor verification did not complete. Please try again.');
+    } catch (submitError) {
+      setError(submitError.message || 'Failed to verify second factor');
+    }
+  }
+
+  async function handleSecondFactorMethodChange(event) {
+    const nextMethod = event.target.value;
+    setSelectedSecondFactor(nextMethod);
+    setSecondFactorInfo('');
+    setError('');
+
+    try {
+      await sendSecondFactorCodeIfNeeded(nextMethod);
+    } catch (sendError) {
+      setError(sendError.message || 'Failed to initialize second-factor method');
+    }
+  }
+
+  async function resendSecondFactorEmailCode() {
+    setError('');
+    try {
+      await sendSecondFactorCodeIfNeeded(MFA_EMAIL_CODE);
+      toast.success('Second-factor email code sent');
+    } catch (sendError) {
+      setError(sendError.message || 'Failed to resend second-factor code');
     }
   }
 
@@ -127,39 +283,116 @@ export default function LoginForm({ initialMessage = '' }) {
       {verifiedMessage ? <p className="mt-4 text-sm text-green-700">{verifiedMessage}</p> : null}
       {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
-      <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-        <label className="block text-sm text-zinc-700" htmlFor="email">
-          Email
-          <input
-            id="email"
-            type="email"
-            className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </label>
+      {stage === 'password' ? (
+        <form className="mt-4 space-y-4" onSubmit={handlePasswordSubmit}>
+          <label className="block text-sm text-zinc-700" htmlFor="email">
+            Email
+            <input
+              id="email"
+              type="email"
+              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </label>
 
-        <label className="block text-sm text-zinc-700" htmlFor="password">
-          Password
-          <input
-            id="password"
-            type="password"
-            className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
+          <label className="block text-sm text-zinc-700" htmlFor="password">
+            Password
+            <input
+              id="password"
+              type="password"
+              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </label>
 
-        <button
-          type="submit"
-          className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isBusy}
-        >
-          {isBusy ? 'Signing in...' : 'Login'}
-        </button>
-      </form>
+          <button
+            type="submit"
+            className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isBusy}
+          >
+            {isBusy ? 'Signing in...' : 'Login'}
+          </button>
+        </form>
+      ) : (
+        <form className="mt-4 space-y-4" onSubmit={handleSecondFactorSubmit}>
+          <p className="text-sm text-zinc-600">Second-factor verification is required.</p>
+
+          <label className="block text-sm text-zinc-700" htmlFor="secondFactorMethod">
+            Method
+            <select
+              id="secondFactorMethod"
+              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
+              value={selectedSecondFactor}
+              onChange={handleSecondFactorMethodChange}
+            >
+              {availableSecondFactors.map((factor, index) => (
+                <option key={`${factor.strategy}-${index}`} value={factor.strategy}>
+                  {factor.strategy === MFA_TOTP
+                    ? 'Authenticator app (TOTP)'
+                    : factor.strategy === MFA_EMAIL_CODE
+                      ? 'Email code'
+                      : factor.strategy === MFA_BACKUP_CODE
+                        ? 'Backup code'
+                        : factor.strategy}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {secondFactorInfo ? <p className="text-xs text-zinc-500">{secondFactorInfo}</p> : null}
+
+          <label className="block text-sm text-zinc-700" htmlFor="secondFactorCode">
+            Code
+            <input
+              id="secondFactorCode"
+              type="text"
+              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
+              value={secondFactorCode}
+              onChange={(event) => setSecondFactorCode(event.target.value)}
+              required
+            />
+          </label>
+
+          {selectedSecondFactor === MFA_EMAIL_CODE ? (
+            <button
+              type="button"
+              className="text-xs font-medium text-green-700 hover:text-green-800"
+              onClick={resendSecondFactorEmailCode}
+            >
+              Resend second-factor email code
+            </button>
+          ) : null}
+
+          <button
+            type="submit"
+            className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isBusy || !secondFactorCode.trim()}
+          >
+            {isBusy ? 'Verifying...' : 'Verify code'}
+          </button>
+
+          <button
+            type="button"
+            className="w-full rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+            onClick={async () => {
+              if (signIn) {
+                await signIn.reset();
+              }
+              setStage('password');
+              setSecondFactorCode('');
+              setSecondFactorInfo('');
+              setAvailableSecondFactors([]);
+              setSelectedSecondFactor('');
+            }}
+          >
+            Back to password
+          </button>
+        </form>
+      )}
 
       {canResend ? (
         <button
@@ -172,7 +405,10 @@ export default function LoginForm({ initialMessage = '' }) {
       ) : null}
 
       <p className="mt-4 text-sm text-zinc-600">
-        Need an account? <Link className="text-green-700 hover:underline" href="/register">Register</Link>
+        Need an account?{' '}
+        <Link className="text-green-700 hover:underline" href="/register">
+          Register
+        </Link>
       </p>
     </div>
   );
