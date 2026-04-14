@@ -92,6 +92,24 @@ a {
   color: inherit;
 }
 
+a[href],
+button:not(:disabled),
+input[type="button"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+input[type="reset"]:not(:disabled),
+summary,
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 .cyber-shell {
   width: min(1120px, 100%);
   margin: 0 auto;
@@ -181,6 +199,7 @@ a {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--foreground);
+  cursor: pointer;
   clip-path: polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px));
 }
 
@@ -243,6 +262,47 @@ a {
 .cyber-btn-danger:hover {
   background: rgba(255, 51, 102, 0.12);
   box-shadow: 0 0 6px rgba(255, 51, 102, 0.45);
+}
+
+.cyber-btn-user {
+  border-color: rgba(0, 212, 255, 0.72);
+  color: #00d4ff;
+}
+
+.cyber-btn-user:hover {
+  background: rgba(0, 212, 255, 0.14);
+  box-shadow: var(--box-shadow-neon-tertiary);
+}
+
+.cyber-btn-chat {
+  border-color: rgba(255, 0, 255, 0.72);
+  color: #f2b7ff;
+}
+
+.cyber-btn-chat:hover {
+  background: rgba(255, 0, 255, 0.16);
+  box-shadow: var(--box-shadow-neon-secondary);
+}
+
+.cyber-btn-admin {
+  border-color: rgba(124, 58, 237, 0.82);
+  color: #d6b4ff;
+}
+
+.cyber-btn-admin:hover {
+  background: rgba(124, 58, 237, 0.18);
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+}
+
+.cyber-btn-admin-active {
+  border-color: #00d4ff;
+  background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+  color: #05050b;
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.55);
+}
+
+.cyber-btn-admin-active:hover {
+  filter: brightness(1.1);
 }
 
 .cyber-btn-solid {

@@ -311,7 +311,7 @@ export default function ChatClient({
             <div className="flex items-center gap-1">
               {isAdmin ? (
                 <Link
-                  className="cyber-btn cyber-btn-secondary !h-8 !min-h-0 !w-8 !p-0"
+                  className="cyber-btn cyber-btn-admin !h-8 !min-h-0 !w-8 !p-0"
                   href="/admin/users/"
                   aria-label="Admin"
                   title="Admin"
@@ -320,7 +320,7 @@ export default function ChatClient({
                 </Link>
               ) : null}
               <Link
-                className="cyber-btn cyber-btn-outline !h-8 !min-h-0 !w-8 !border-[#00d4ff] !p-0 !text-[#00d4ff]"
+                className="cyber-btn cyber-btn-user !h-8 !min-h-0 !w-8 !p-0"
                 href="/user"
                 aria-label="User settings"
                 title="User settings"

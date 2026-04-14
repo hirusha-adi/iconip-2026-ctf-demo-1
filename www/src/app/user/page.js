@@ -10,7 +10,7 @@ export default async function UserPage() {
     <main className="flex flex-1">
       <div className="cyber-shell">
         <header className="mb-4 flex items-center justify-between">
-          <Link className="cyber-btn cyber-btn-outline" href="/chat">
+          <Link className="cyber-btn cyber-btn-chat" href="/chat">
             Chat
           </Link>
           <Link className="cyber-btn cyber-btn-ghost" href="/logout">
