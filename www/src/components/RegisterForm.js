@@ -59,12 +59,13 @@ export default function RegisterForm() {
 
   if (registered) {
     return (
-      <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold text-zinc-900">Check your inbox</h1>
-        <p className="mt-2 text-sm text-zinc-600">
+      <div className="cyber-card cyber-terminal w-full p-6">
+        <p className="cyber-kicker">Registration Complete</p>
+        <h1 className="cyber-title mt-3 text-2xl font-bold text-foreground">Check your inbox</h1>
+        <p className="cyber-muted mt-2 text-sm">
           We sent a verification email. Click the link in the email to finish verification, then log in.
         </p>
-        <Link className="mt-4 inline-block text-sm font-medium text-green-700 hover:underline" href="/login">
+        <Link className="cyber-link mt-5 inline-block text-sm" href="/login">
           Go to login
         </Link>
       </div>
@@ -72,82 +73,93 @@ export default function RegisterForm() {
   }
 
   return (
-    <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold text-zinc-900">Register</h1>
-      <p className="mt-1 text-sm text-zinc-600">Create your account to access the CTF chat.</p>
+    <div className="cyber-card cyber-terminal w-full p-6">
+      <p className="cyber-kicker">Create Account</p>
+      <h1 className="cyber-title mt-3 text-2xl font-bold text-foreground">Register</h1>
+      <p className="cyber-muted mt-1 text-sm">Create your account to access the CTF chat.</p>
 
-      {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="cyber-note cyber-note-error mt-4">{error}</p> : null}
 
       <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-        <label className="block text-sm text-zinc-700" htmlFor="firstName">
+        <label className="cyber-label" htmlFor="firstName">
           First name
-          <input
-            id="firstName"
-            className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-            value={form.firstName}
-            onChange={(event) => updateField('firstName', event.target.value)}
-            required
-          />
+          <div className="cyber-input-wrap">
+            <input
+              id="firstName"
+              className="cyber-input"
+              value={form.firstName}
+              onChange={(event) => updateField('firstName', event.target.value)}
+              required
+            />
+          </div>
         </label>
 
-        <label className="block text-sm text-zinc-700" htmlFor="lastName">
+        <label className="cyber-label" htmlFor="lastName">
           Last name
-          <input
-            id="lastName"
-            className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-            value={form.lastName}
-            onChange={(event) => updateField('lastName', event.target.value)}
-            required
-          />
+          <div className="cyber-input-wrap">
+            <input
+              id="lastName"
+              className="cyber-input"
+              value={form.lastName}
+              onChange={(event) => updateField('lastName', event.target.value)}
+              required
+            />
+          </div>
         </label>
 
-        <label className="block text-sm text-zinc-700" htmlFor="email">
+        <label className="cyber-label" htmlFor="email">
           Email
-          <input
-            id="email"
-            type="email"
-            className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-            value={form.email}
-            onChange={(event) => updateField('email', event.target.value)}
-            required
-          />
+          <div className="cyber-input-wrap">
+            <input
+              id="email"
+              type="email"
+              className="cyber-input"
+              value={form.email}
+              onChange={(event) => updateField('email', event.target.value)}
+              required
+            />
+          </div>
         </label>
 
-        <label className="block text-sm text-zinc-700" htmlFor="password">
+        <label className="cyber-label" htmlFor="password">
           Password
-          <input
-            id="password"
-            type="password"
-            className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-            value={form.password}
-            onChange={(event) => updateField('password', event.target.value)}
-            required
-          />
+          <div className="cyber-input-wrap">
+            <input
+              id="password"
+              type="password"
+              className="cyber-input"
+              value={form.password}
+              onChange={(event) => updateField('password', event.target.value)}
+              required
+            />
+          </div>
         </label>
 
-        <label className="block text-sm text-zinc-700" htmlFor="confirmPassword">
+        <label className="cyber-label" htmlFor="confirmPassword">
           Confirm password
-          <input
-            id="confirmPassword"
-            type="password"
-            className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-            value={form.confirmPassword}
-            onChange={(event) => updateField('confirmPassword', event.target.value)}
-            required
-          />
+          <div className="cyber-input-wrap">
+            <input
+              id="confirmPassword"
+              type="password"
+              className="cyber-input"
+              value={form.confirmPassword}
+              onChange={(event) => updateField('confirmPassword', event.target.value)}
+              required
+            />
+          </div>
         </label>
 
         <button
           type="submit"
-          className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cyber-btn cyber-btn-solid w-full"
           disabled={submitting}
         >
           {submitting ? 'Registering...' : 'Register'}
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-zinc-600">
-        Already have an account? <Link className="text-green-700 hover:underline" href="/login">Login</Link>
+      <p className="cyber-muted mt-4 text-sm">
+        Already have an account? <Link className="cyber-link" href="/login">Login</Link>
       </p>
     </div>
   );

@@ -87,15 +87,16 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
   }
 
   if (!isLoaded) {
-    return <p className="text-sm text-zinc-500">Loading...</p>;
+    return <p className="cyber-muted text-sm">Loading...</p>;
   }
 
   if (!isSignedIn || !user) {
     return (
-      <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold text-zinc-900">User Settings</h1>
-        <p className="mt-2 text-sm text-zinc-600">Please sign in to manage your account.</p>
-        <Link className="mt-4 inline-block text-sm font-medium text-green-700 hover:underline" href="/login?next=/user">
+      <div className="cyber-card cyber-terminal w-full max-w-md p-6">
+        <p className="cyber-kicker">User Settings</p>
+        <h1 className="cyber-title mt-2 text-2xl font-semibold text-foreground">User Settings</h1>
+        <p className="cyber-muted mt-2 text-sm">Please sign in to manage your account.</p>
+        <Link className="cyber-link mt-4 inline-block text-sm" href="/login?next=/user">
           Go to login
         </Link>
       </div>
@@ -104,41 +105,46 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
 
   return (
     <div className="w-full max-w-3xl space-y-4">
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold text-zinc-900">User Settings</h1>
-        <p className="mt-1 text-sm text-zinc-600">Manage your profile and password.</p>
+      <section className="cyber-card p-6">
+        <p className="cyber-kicker">Profile Console</p>
+        <h1 className="cyber-title mt-2 text-2xl font-semibold text-foreground">User Settings</h1>
+        <p className="cyber-muted mt-1 text-sm">Manage your profile and password.</p>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-zinc-900">Profile</h2>
-        <p className="mt-1 text-xs text-zinc-500">Email: {user.primaryEmailAddress?.emailAddress || initialEmail}</p>
+      <section className="cyber-card p-6">
+        <h2 className="cyber-title text-lg font-semibold text-foreground">Profile</h2>
+        <p className="cyber-muted mt-1 text-xs">Email: {user.primaryEmailAddress?.emailAddress || initialEmail}</p>
 
         <form className="mt-4 space-y-3" onSubmit={handleUpdateName}>
-          <label className="block text-sm text-zinc-700" htmlFor="firstName">
+          <label className="cyber-label" htmlFor="firstName">
             First name
-            <input
-              id="firstName"
-              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
-              required
-            />
+            <div className="cyber-input-wrap">
+              <input
+                id="firstName"
+                className="cyber-input"
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                required
+              />
+            </div>
           </label>
 
-          <label className="block text-sm text-zinc-700" htmlFor="lastName">
+          <label className="cyber-label" htmlFor="lastName">
             Last name
-            <input
-              id="lastName"
-              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
-              required
-            />
+            <div className="cyber-input-wrap">
+              <input
+                id="lastName"
+                className="cyber-input"
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                required
+              />
+            </div>
           </label>
 
           <button
             type="submit"
-            className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cyber-btn cyber-btn-solid"
             disabled={busy === 'name'}
           >
             {busy === 'name' ? 'Saving...' : 'Save name'}
@@ -146,49 +152,55 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-zinc-900">Change Password</h2>
+      <section className="cyber-card p-6">
+        <h2 className="cyber-title text-lg font-semibold text-foreground">Change Password</h2>
 
         <form className="mt-4 space-y-3" onSubmit={handleChangePassword}>
-          <label className="block text-sm text-zinc-700" htmlFor="currentPassword">
+          <label className="cyber-label" htmlFor="currentPassword">
             Current password
-            <input
-              id="currentPassword"
-              type="password"
-              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-              required
-            />
+            <div className="cyber-input-wrap">
+              <input
+                id="currentPassword"
+                type="password"
+                className="cyber-input"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                required
+              />
+            </div>
           </label>
 
-          <label className="block text-sm text-zinc-700" htmlFor="newPassword">
+          <label className="cyber-label" htmlFor="newPassword">
             New password
-            <input
-              id="newPassword"
-              type="password"
-              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              required
-            />
+            <div className="cyber-input-wrap">
+              <input
+                id="newPassword"
+                type="password"
+                className="cyber-input"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                required
+              />
+            </div>
           </label>
 
-          <label className="block text-sm text-zinc-700" htmlFor="confirmPassword">
+          <label className="cyber-label" htmlFor="confirmPassword">
             Confirm new password
-            <input
-              id="confirmPassword"
-              type="password"
-              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              required
-            />
+            <div className="cyber-input-wrap">
+              <input
+                id="confirmPassword"
+                type="password"
+                className="cyber-input"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+              />
+            </div>
           </label>
 
           <button
             type="submit"
-            className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cyber-btn cyber-btn-solid"
             disabled={busy === 'password'}
           >
             {busy === 'password' ? 'Updating...' : 'Update password'}
@@ -196,9 +208,9 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-zinc-900">Email MFA</h2>
-        <p className="mt-1 text-sm text-zinc-600">
+      <section className="cyber-card p-6">
+        <h2 className="cyber-title text-lg font-semibold text-foreground">Email MFA</h2>
+        <p className="cyber-muted mt-1 text-sm">
           Login requires email verification code as second factor based on your Clerk instance settings.
         </p>
       </section>

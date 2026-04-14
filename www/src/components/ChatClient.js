@@ -280,49 +280,32 @@ export default function ChatClient({
   }
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-      <aside className="flex h-full min-h-0 w-72 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50">
-        <div className="shrink-0 border-b border-zinc-200 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-            Chat Workspace
-          </p>
-          <p className="mt-1 truncate text-sm font-semibold text-zinc-900">
-            {userName}
-          </p>
+    <div className="cyber-card flex h-full min-h-0 overflow-hidden">
+      <aside className="flex h-full min-h-0 w-72 shrink-0 flex-col border-r border-[#2a2a3a] bg-[#101018]">
+        <div className="shrink-0 border-b border-[#2a2a3a] p-3">
+          <p className="cyber-kicker">Chat Workspace</p>
+          <p className="cyber-title mt-1 truncate text-sm font-semibold text-foreground">{userName}</p>
 
-          <button
-            type="button"
-            className="mt-3 w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-700"
-            onClick={createSession}
-          >
+          <button type="button" className="cyber-btn cyber-btn-solid mt-3 w-full" onClick={createSession}>
             New chat
           </button>
 
           <div className="mt-2 flex gap-2 text-xs">
-            <Link
-              className="rounded-md border border-zinc-300 px-2 py-1 font-medium text-zinc-700 hover:bg-zinc-200"
-              href="/user"
-            >
+            <Link className="cyber-btn cyber-btn-outline !min-h-0 !px-2 !py-1 !text-[10px]" href="/user">
               User
             </Link>
             {isAdmin ? (
-              <Link
-                className="rounded-md border border-zinc-300 px-2 py-1 font-medium text-zinc-700 hover:bg-zinc-200"
-                href="/admin/users/all"
-              >
+              <Link className="cyber-btn cyber-btn-secondary !min-h-0 !px-2 !py-1 !text-[10px]" href="/admin/users/all">
                 Admin
               </Link>
             ) : null}
-            <Link
-              className="rounded-md border border-zinc-300 px-2 py-1 font-medium text-zinc-700 hover:bg-zinc-200"
-              href="/logout"
-            >
+            <Link className="cyber-btn cyber-btn-ghost !min-h-0 !px-2 !py-1 !text-[10px]" href="/logout">
               Logout
             </Link>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <div className="cyber-scroll min-h-0 flex-1 overflow-y-auto p-3">
           <ul className="space-y-2">
             {sessions.map((session) => {
               const active = session.id === activeSessionId;
@@ -332,28 +315,30 @@ export default function ChatClient({
                 <li key={session.id}>
                   {isEditing ? (
                     <form
-                      className="rounded-lg border border-zinc-300 bg-white p-2"
+                      className="cyber-note space-y-2 bg-[#141425]"
                       onSubmit={(event) => saveSessionTitle(event, session.id)}
                     >
-                      <input
-                        type="text"
-                        className="w-full rounded-md border border-zinc-300 px-2 py-1 text-sm outline-none ring-zinc-700 focus:ring"
-                        value={editingTitle}
-                        onChange={(event) => setEditingTitle(event.target.value)}
-                        maxLength={120}
-                        autoFocus
-                      />
+                      <div className="cyber-input-wrap">
+                        <input
+                          type="text"
+                          className="cyber-input"
+                          value={editingTitle}
+                          onChange={(event) => setEditingTitle(event.target.value)}
+                          maxLength={120}
+                          autoFocus
+                        />
+                      </div>
                       <div className="mt-2 flex gap-2">
                         <button
                           type="submit"
-                          className="rounded-md bg-zinc-900 px-2 py-1 text-xs font-semibold text-white hover:bg-zinc-700 disabled:opacity-60"
+                          className="cyber-btn cyber-btn-solid !min-h-0 !px-2 !py-1 !text-[10px]"
                           disabled={savingTitle}
                         >
                           {savingTitle ? "Saving..." : "Save"}
                         </button>
                         <button
                           type="button"
-                          className="rounded-md border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                          className="cyber-btn cyber-btn-outline !min-h-0 !px-2 !py-1 !text-[10px]"
                           onClick={cancelEditingSession}
                           disabled={savingTitle}
                         >
@@ -363,10 +348,10 @@ export default function ChatClient({
                     </form>
                   ) : (
                     <div
-                      className={`flex items-start gap-2 rounded-lg px-2 py-2 ${
+                      className={`flex items-start gap-2 px-2 py-2 ${
                         active
-                          ? "bg-zinc-900 text-white"
-                          : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200"
+                          ? "cyber-note border-[#00ff88] bg-[rgba(0,255,136,0.16)] text-foreground shadow-[var(--box-shadow-neon-sm)]"
+                          : "cyber-note border-[#2a2a3a] bg-[#12121a] text-foreground hover:border-[#00d4ff]"
                       }`}
                     >
                       <button
@@ -379,7 +364,7 @@ export default function ChatClient({
                         </span>
                         <span
                           className={`block text-xs ${
-                            active ? "text-zinc-300" : "text-zinc-500"
+                            active ? "text-[#b5ffe1]" : "text-[#8f99b3]"
                           }`}
                         >
                           {session.is_ended ? "Ended" : "Active"}
@@ -389,8 +374,8 @@ export default function ChatClient({
                         type="button"
                         className={`rounded p-1 text-xs ${
                           active
-                            ? "text-zinc-300 hover:bg-zinc-800"
-                            : "text-zinc-500 hover:bg-zinc-300"
+                            ? "text-[#00ff88] hover:bg-[rgba(0,255,136,0.14)]"
+                            : "text-[#00d4ff] hover:bg-[rgba(0,212,255,0.12)]"
                         }`}
                         onClick={() => startEditingSession(session)}
                         aria-label="Edit session name"
@@ -407,20 +392,20 @@ export default function ChatClient({
         </div>
       </aside>
 
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
-        <header className="shrink-0 border-b border-zinc-200 px-4 py-3">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#0d0d14]">
+        <header className="shrink-0 border-b border-[#2a2a3a] px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="truncate text-base font-semibold text-zinc-900">
+              <h1 className="cyber-title truncate text-base font-semibold text-foreground">
                 {activeSession?.title || "New chat"}
               </h1>
-              <p className="text-xs text-zinc-500">
+              <p className="cyber-muted text-xs">
                 {activeSession?.is_ended ? "Session ended" : "Session active"}
               </p>
             </div>
             <button
               type="button"
-              className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="cyber-btn cyber-btn-outline"
               onClick={endCurrentSession}
               disabled={!activeSession || activeSession.is_ended}
             >
@@ -429,16 +414,16 @@ export default function ChatClient({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="cyber-scroll min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-6">
             {invalidRequestedSession ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-                <p className="text-sm text-zinc-600">
+                <p className="cyber-note cyber-note-error">
                   The session doesn&apos;t exist, please create a new one.
                 </p>
                 <button
                   type="button"
-                  className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-700"
+                  className="cyber-btn cyber-btn-solid"
                   onClick={createSession}
                 >
                   Create new session
@@ -448,7 +433,7 @@ export default function ChatClient({
 
             {!invalidRequestedSession && loadingMessages ? (
               <div className="flex flex-1 items-center justify-center">
-                <p className="text-sm text-zinc-500">Loading messages...</p>
+                <p className="cyber-note cyber-note-info">Loading messages...</p>
               </div>
             ) : null}
 
@@ -456,7 +441,7 @@ export default function ChatClient({
             !loadingMessages &&
             !messages.length ? (
               <div className="flex flex-1 items-center justify-center">
-                <p className="text-sm text-zinc-500">
+                <p className="cyber-note cyber-note-info">
                   No messages yet. Start the conversation.
                 </p>
               </div>
@@ -474,10 +459,10 @@ export default function ChatClient({
                       className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                        className={`max-w-[85%] px-4 py-2.5 text-sm leading-relaxed ${
                           isUser
-                            ? "bg-zinc-900 text-white"
-                            : "bg-zinc-100 text-zinc-900"
+                            ? "cyber-note border-[#00ff88] bg-[rgba(0,255,136,0.2)] text-foreground"
+                            : "cyber-note border-[#2a2a3a] bg-[#151525] text-foreground"
                         }`}
                       >
                         {message.content}
@@ -492,19 +477,21 @@ export default function ChatClient({
           </div>
         </div>
 
-        <form className="shrink-0 border-t border-zinc-200 bg-white" onSubmit={handleSend}>
+        <form className="shrink-0 border-t border-[#2a2a3a] bg-[#11111b]" onSubmit={handleSend}>
           <div className="mx-auto flex w-full max-w-3xl gap-2 px-4 py-3">
-            <input
-              type="text"
-              className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-zinc-700 focus:ring disabled:cursor-not-allowed disabled:bg-zinc-100"
-              placeholder="Message..."
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              disabled={inputDisabled}
-            />
+            <div className="cyber-input-wrap flex-1">
+              <input
+                type="text"
+                className="cyber-input"
+                placeholder="Message..."
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                disabled={inputDisabled}
+              />
+            </div>
             <button
               type="submit"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="cyber-btn cyber-btn-solid"
               disabled={inputDisabled || !input.trim()}
             >
               {sending ? "Sending..." : "Send"}

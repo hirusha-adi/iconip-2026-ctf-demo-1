@@ -35,8 +35,10 @@ export default async function LoginPage({ searchParams }) {
   const verificationStatus = typeof query.verified === 'string' ? query.verified : '';
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center px-6 py-14">
-      <LoginForm initialMessage={getVerificationMessage(verificationStatus)} nextPath={nextPath} />
+    <main className="flex flex-1 items-center">
+      <div className="cyber-shell-narrow">
+        <LoginForm initialMessage={getVerificationMessage(verificationStatus)} nextPath={nextPath} />
+      </div>
     </main>
   );
 }

@@ -16,9 +16,9 @@ export default async function AdminUsersAllPage() {
         <StatCard label="Chat sessions" value={stats.totalChatSessions} />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-zinc-200 text-sm">
-          <thead className="bg-zinc-50">
+      <div className="cyber-table-wrap cyber-scroll">
+        <table className="cyber-table">
+          <thead>
             <tr>
               <Th>Email</Th>
               <Th>Name</Th>
@@ -29,7 +29,7 @@ export default async function AdminUsersAllPage() {
               <Th>Actions</Th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100">
+          <tbody>
             {users.map((user) => (
               <tr key={user.clerk_user_id}>
                 <Td>{user.email}</Td>
@@ -40,7 +40,7 @@ export default async function AdminUsersAllPage() {
                 <Td>{user.last_seen_at ? new Date(user.last_seen_at).toLocaleString() : 'Never'}</Td>
                 <Td>
                   <Link
-                    className="rounded-md border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                    className="cyber-btn cyber-btn-outline !min-h-0 !px-2 !py-1 !text-[10px]"
                     href={`/admin/users/${user.clerk_user_id}`}
                   >
                     View
@@ -50,7 +50,7 @@ export default async function AdminUsersAllPage() {
             ))}
             {!users.length ? (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-zinc-500">
+                <td colSpan={7} className="px-4 py-6 text-center text-sm cyber-muted">
                   No users found.
                 </td>
               </tr>
@@ -64,17 +64,17 @@ export default async function AdminUsersAllPage() {
 
 function StatCard({ label, value }) {
   return (
-    <article className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-zinc-900">{value}</p>
+    <article className="cyber-card p-3">
+      <p className="cyber-kicker text-[10px]">{label}</p>
+      <p className="mt-2 text-xl font-bold text-foreground">{value}</p>
     </article>
   );
 }
 
 function Th({ children }) {
-  return <th className="px-4 py-3 text-left font-semibold text-zinc-700">{children}</th>;
+  return <th>{children}</th>;
 }
 
 function Td({ children }) {
-  return <td className="px-4 py-3 text-zinc-700">{children}</td>;
+  return <td>{children}</td>;
 }

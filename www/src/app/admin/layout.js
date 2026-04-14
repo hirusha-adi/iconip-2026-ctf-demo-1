@@ -6,26 +6,28 @@ export default async function AdminLayout({ children }) {
   const { profile } = await requirePageAdmin();
 
   return (
-    <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
-      <header className="mb-4 flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
-        <div>
-          <h1 className="text-lg font-semibold text-zinc-900">Admin Panel</h1>
-          <p className="text-xs text-zinc-500">Signed in as {profile.email}</p>
-        </div>
-        <div className="flex gap-2">
-          <Link className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100" href="/user">
-            User
-          </Link>
-          <Link className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100" href="/chat">
-            Chat
-          </Link>
-          <Link className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100" href="/logout">
-            Logout
-          </Link>
-        </div>
-      </header>
+    <div className="flex flex-1">
+      <div className="cyber-shell">
+        <header className="cyber-card mb-4 flex items-center justify-between px-4 py-3">
+          <div>
+            <h1 className="cyber-title text-lg font-bold text-foreground">Admin Panel</h1>
+            <p className="cyber-muted text-xs">Signed in as {profile.email}</p>
+          </div>
+          <div className="flex gap-2">
+            <Link className="cyber-btn cyber-btn-outline" href="/user">
+              User
+            </Link>
+            <Link className="cyber-btn cyber-btn-primary" href="/chat">
+              Chat
+            </Link>
+            <Link className="cyber-btn cyber-btn-ghost" href="/logout">
+              Logout
+            </Link>
+          </div>
+        </header>
 
-      {children}
+        {children}
+      </div>
     </div>
   );
 }

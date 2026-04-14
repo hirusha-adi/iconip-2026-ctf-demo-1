@@ -11,8 +11,10 @@ export default async function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center px-6 py-14">
-      <RegisterForm />
+    <main className="flex flex-1 items-center">
+      <div className="cyber-shell-narrow">
+        <RegisterForm />
+      </div>
     </main>
   );
 }

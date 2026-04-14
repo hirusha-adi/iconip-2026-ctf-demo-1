@@ -241,42 +241,47 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
   }
 
   return (
-    <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold text-zinc-900">Login</h1>
-      <p className="mt-1 text-sm text-zinc-600">Sign in to continue to chat.</p>
+    <div className="cyber-card cyber-terminal w-full p-6">
+      <p className="cyber-kicker">User Authentication</p>
+      <h1 className="cyber-title mt-3 text-2xl font-bold text-foreground">Login</h1>
+      <p className="cyber-muted mt-1 text-sm">Sign in to continue to chat.</p>
 
-      {verifiedMessage ? <p className="mt-4 text-sm text-green-700">{verifiedMessage}</p> : null}
-      {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+      {verifiedMessage ? <p className="cyber-note cyber-note-success mt-4">{verifiedMessage}</p> : null}
+      {error ? <p className="cyber-note cyber-note-error mt-4">{error}</p> : null}
 
       {stage === 'password' ? (
         <form className="mt-4 space-y-4" onSubmit={handlePasswordSubmit}>
-          <label className="block text-sm text-zinc-700" htmlFor="email">
+          <label className="cyber-label" htmlFor="email">
             Email
-            <input
-              id="email"
-              type="email"
-              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
+            <div className="cyber-input-wrap">
+              <input
+                id="email"
+                type="email"
+                className="cyber-input"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </div>
           </label>
 
-          <label className="block text-sm text-zinc-700" htmlFor="password">
+          <label className="cyber-label" htmlFor="password">
             Password
-            <input
-              id="password"
-              type="password"
-              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
+            <div className="cyber-input-wrap">
+              <input
+                id="password"
+                type="password"
+                className="cyber-input"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </div>
           </label>
 
           <button
             type="submit"
-            className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cyber-btn cyber-btn-solid w-full"
             disabled={isBusy}
           >
             {isBusy ? 'Signing in...' : 'Login'}
@@ -284,24 +289,26 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
         </form>
       ) : (
         <form className="mt-4 space-y-4" onSubmit={handleSecondFactorSubmit}>
-          <p className="text-sm text-zinc-600">Email verification code is required.</p>
-          {secondFactorInfo ? <p className="text-xs text-zinc-500">{secondFactorInfo}</p> : null}
+          <p className="cyber-note cyber-note-info">Email verification code is required.</p>
+          {secondFactorInfo ? <p className="cyber-muted text-xs">{secondFactorInfo}</p> : null}
 
-          <label className="block text-sm text-zinc-700" htmlFor="secondFactorCode">
+          <label className="cyber-label" htmlFor="secondFactorCode">
             Code
-            <input
-              id="secondFactorCode"
-              type="text"
-              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-              value={secondFactorCode}
-              onChange={(event) => setSecondFactorCode(event.target.value)}
-              required
-            />
+            <div className="cyber-input-wrap">
+              <input
+                id="secondFactorCode"
+                type="text"
+                className="cyber-input"
+                value={secondFactorCode}
+                onChange={(event) => setSecondFactorCode(event.target.value)}
+                required
+              />
+            </div>
           </label>
 
           <button
             type="button"
-            className="text-xs font-medium text-green-700 hover:text-green-800"
+            className="cyber-link text-xs"
             onClick={resendSecondFactorEmailCode}
           >
             Resend verification code
@@ -309,7 +316,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
 
           <button
             type="submit"
-            className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cyber-btn cyber-btn-solid w-full"
             disabled={isBusy || !secondFactorCode.trim()}
           >
             {isBusy ? 'Verifying...' : 'Verify code'}
@@ -317,7 +324,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
 
           <button
             type="button"
-            className="w-full rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+            className="cyber-btn cyber-btn-outline w-full"
             onClick={async () => {
               if (signIn) {
                 await signIn.reset();
@@ -336,16 +343,16 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
       {canResend ? (
         <button
           type="button"
-          className="mt-3 text-sm font-medium text-green-700 hover:text-green-800"
+          className="cyber-link mt-3 text-sm"
           onClick={handleResendVerification}
         >
           Resend verification email
         </button>
       ) : null}
 
-      <p className="mt-4 text-sm text-zinc-600">
+      <p className="cyber-muted mt-4 text-sm">
         Need an account?{' '}
-        <Link className="text-green-700 hover:underline" href="/register">
+        <Link className="cyber-link" href="/register">
           Register
         </Link>
       </p>

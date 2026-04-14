@@ -122,54 +122,60 @@ export default async function AdminUserDetailPage({ params }) {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-zinc-900">User: {detail.profile.email}</h2>
-          <p className="text-sm text-zinc-500">Clerk ID: {detail.profile.clerk_user_id}</p>
+          <h2 className="cyber-title text-xl font-bold text-foreground">User: {detail.profile.email}</h2>
+          <p className="cyber-muted text-xs">Clerk ID: {detail.profile.clerk_user_id}</p>
         </div>
-        <Link className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100" href="/admin/users/all">
+        <Link className="cyber-btn cyber-btn-outline" href="/admin/users/all">
           Back
         </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Profile controls">
-          <form action={updateNameAction} className="space-y-2">
-            <label className="block text-xs text-zinc-600" htmlFor="firstName">
+          <form action={updateNameAction} className="space-y-3">
+            <label className="cyber-label" htmlFor="firstName">
               First name
-              <input
-                id="firstName"
-                name="firstName"
-                defaultValue={detail.profile.first_name}
-                className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                required
-              />
+              <div className="cyber-input-wrap">
+                <input
+                  id="firstName"
+                  name="firstName"
+                  defaultValue={detail.profile.first_name}
+                  className="cyber-input"
+                  required
+                />
+              </div>
             </label>
-            <label className="block text-xs text-zinc-600" htmlFor="lastName">
+            <label className="cyber-label" htmlFor="lastName">
               Last name
-              <input
-                id="lastName"
-                name="lastName"
-                defaultValue={detail.profile.last_name}
-                className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                required
-              />
+              <div className="cyber-input-wrap">
+                <input
+                  id="lastName"
+                  name="lastName"
+                  defaultValue={detail.profile.last_name}
+                  className="cyber-input"
+                  required
+                />
+              </div>
             </label>
-            <button className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white" type="submit">
+            <button className="cyber-btn cyber-btn-solid" type="submit">
               Save name
             </button>
           </form>
 
-          <form action={updateEmailAction} className="mt-4 space-y-2">
-            <label className="block text-xs text-zinc-600" htmlFor="email">
+          <form action={updateEmailAction} className="mt-4 space-y-3">
+            <label className="cyber-label" htmlFor="email">
               Email
-              <input
-                id="email"
-                name="email"
-                defaultValue={detail.profile.email}
-                className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                required
-              />
+              <div className="cyber-input-wrap">
+                <input
+                  id="email"
+                  name="email"
+                  defaultValue={detail.profile.email}
+                  className="cyber-input"
+                  required
+                />
+              </div>
             </label>
-            <button className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white" type="submit">
+            <button className="cyber-btn cyber-btn-solid" type="submit">
               Save email
             </button>
           </form>
@@ -177,39 +183,41 @@ export default async function AdminUserDetailPage({ params }) {
           <div className="mt-4 flex flex-wrap gap-2">
             <form action={toggleVerifiedAction}>
               <input type="hidden" name="nextValue" value={String(!detail.profile.is_verified)} />
-              <button className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100" type="submit">
+              <button className="cyber-btn cyber-btn-outline" type="submit">
                 {detail.profile.is_verified ? 'De-verify account' : 'Verify account'}
               </button>
             </form>
 
             <form action={toggleAdminAction}>
               <input type="hidden" name="nextValue" value={String(!detail.profile.is_admin)} />
-              <button className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100" type="submit">
+              <button className="cyber-btn cyber-btn-secondary" type="submit">
                 {detail.profile.is_admin ? 'Remove admin' : 'Make admin'}
               </button>
             </form>
           </div>
 
-          <form action={toggleDisabledAction} className="mt-4 space-y-2">
+          <form action={toggleDisabledAction} className="mt-4 space-y-3">
             <input type="hidden" name="nextValue" value={String(!detail.profile.is_disabled)} />
-            <label className="block text-xs text-zinc-600" htmlFor="disabledReason">
+            <label className="cyber-label" htmlFor="disabledReason">
               Disable reason
-              <input
-                id="disabledReason"
-                name="disabledReason"
-                defaultValue={detail.profile.disabled_reason || ''}
-                className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                placeholder="Optional reason"
-              />
+              <div className="cyber-input-wrap">
+                <input
+                  id="disabledReason"
+                  name="disabledReason"
+                  defaultValue={detail.profile.disabled_reason || ''}
+                  className="cyber-input"
+                  placeholder="Optional reason"
+                />
+              </div>
             </label>
-            <button className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50" type="submit">
+            <button className="cyber-btn cyber-btn-danger" type="submit">
               {detail.profile.is_disabled ? 'Enable account' : 'Disable account'}
             </button>
           </form>
         </Card>
 
         <Card title="Activity summary">
-          <ul className="space-y-1 text-sm text-zinc-700">
+          <ul className="space-y-2 text-sm text-foreground">
             <li>Verified: {detail.profile.is_verified ? 'Yes' : 'No'}</li>
             <li>Admin: {detail.profile.is_admin ? 'Yes' : 'No'}</li>
             <li>Disabled: {detail.profile.is_disabled ? 'Yes' : 'No'}</li>
@@ -230,23 +238,23 @@ export default async function AdminUserDetailPage({ params }) {
               .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
             return (
-              <article key={session.id} className="rounded-md border border-zinc-200 p-3">
-                <p className="text-sm font-semibold text-zinc-800">{session.title}</p>
-                <p className="text-xs text-zinc-500">
+              <article key={session.id} className="cyber-note cyber-note-info">
+                <p className="text-sm font-semibold text-foreground">{session.title}</p>
+                <p className="cyber-muted text-xs">
                   Created: {new Date(session.created_at).toLocaleString()} {session.is_ended ? '• Ended' : ''}
                 </p>
                 <div className="mt-2 space-y-1">
                   {sessionMessages.map((message) => (
-                    <p key={message.id} className="text-sm text-zinc-700">
+                    <p key={message.id} className="text-sm text-foreground">
                       <span className="font-medium">{message.role}:</span> {message.content}
                     </p>
                   ))}
-                  {!sessionMessages.length ? <p className="text-sm text-zinc-500">No messages in this session.</p> : null}
+                  {!sessionMessages.length ? <p className="cyber-muted text-sm">No messages in this session.</p> : null}
                 </div>
               </article>
             );
           })}
-          {!detail.sessions.length ? <p className="text-sm text-zinc-500">No chat sessions yet.</p> : null}
+          {!detail.sessions.length ? <p className="cyber-muted text-sm">No chat sessions yet.</p> : null}
         </div>
       </Card>
 
@@ -268,8 +276,8 @@ export default async function AdminUserDetailPage({ params }) {
 
 function Card({ title, children }) {
   return (
-    <article className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-zinc-900">{title}</h3>
+    <article className="cyber-card p-4">
+      <h3 className="cyber-title mb-3 text-sm font-semibold text-[#00d4ff]">{title}</h3>
       {children}
     </article>
   );
@@ -277,14 +285,14 @@ function Card({ title, children }) {
 
 function EventList({ items, emptyText }) {
   if (!items.length) {
-    return <p className="text-sm text-zinc-500">{emptyText}</p>;
+    return <p className="cyber-muted text-sm">{emptyText}</p>;
   }
 
   return (
     <ul className="space-y-2">
       {items.map((item) => (
-        <li key={item.id} className="rounded-md border border-zinc-200 p-2 text-xs text-zinc-700">
-          <p className="font-semibold text-zinc-800">{item.event_type || item.action || item.status || 'event'}</p>
+        <li key={item.id} className="cyber-note p-2 text-xs text-foreground">
+          <p className="font-semibold text-[#00d4ff]">{item.event_type || item.action || item.status || 'event'}</p>
           <p>{item.path || item.email || '-'}</p>
           <p>{new Date(item.created_at).toLocaleString()}</p>
         </li>

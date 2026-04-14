@@ -31,8 +31,8 @@ export default async function ChatPage({ searchParams }) {
   }
 
   return (
-    <main className="h-[100dvh] w-full overflow-hidden bg-zinc-100">
-      <div className="h-full min-h-0 p-2 sm:p-3">
+    <main className="h-[100dvh] w-full overflow-hidden bg-background">
+      <div className="mx-auto h-full min-h-0 w-full max-w-[1500px] p-2 sm:p-3">
         <ChatClient
           initialSessions={sessions}
           initialSessionId={initialSessionId}

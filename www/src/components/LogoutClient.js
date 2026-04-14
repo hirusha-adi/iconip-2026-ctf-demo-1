@@ -24,9 +24,10 @@ export default function LogoutClient() {
   }, [signOut]);
 
   return (
-    <div className="mx-auto w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-6 text-center shadow-sm">
-      <h1 className="text-xl font-semibold text-zinc-900">Logging out...</h1>
-      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+    <div className="cyber-card cyber-terminal mx-auto w-full max-w-sm p-6 text-center">
+      <p className="cyber-kicker">Session Exit</p>
+      <h1 className="cyber-title mt-2 text-xl font-semibold text-foreground">Logging out...</h1>
+      {error ? <p className="cyber-note cyber-note-error mt-3">{error}</p> : null}
     </div>
   );
 }
