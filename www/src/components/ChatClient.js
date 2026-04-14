@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'react-toastify';
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "react-toastify";
 
 async function parseResponse(response) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || 'Request failed');
+    throw new Error(data.error || "Request failed");
   }
 
   return data;
@@ -18,20 +19,25 @@ export default function ChatClient({
   initialSessionId,
   initialMessages,
   hasInvalidRequestedSession = false,
+  userName = "User",
+  isAdmin = false,
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const messageEndRef = useRef(null);
 
   const [sessions, setSessions] = useState(initialSessions);
   const [activeSessionId, setActiveSessionId] = useState(initialSessionId);
   const [messages, setMessages] = useState(initialMessages);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
-  const [invalidRequestedSession, setInvalidRequestedSession] = useState(hasInvalidRequestedSession);
+  const [invalidRequestedSession, setInvalidRequestedSession] = useState(
+    hasInvalidRequestedSession,
+  );
 
   const [editingSessionId, setEditingSessionId] = useState(null);
-  const [editingTitle, setEditingTitle] = useState('');
+  const [editingTitle, setEditingTitle] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
 
   const activeSession = useMemo(
@@ -39,37 +45,63 @@ export default function ChatClient({
     [sessions, activeSessionId],
   );
 
-  const updateSessionInUrl = useCallback((sessionId) => {
-    const url = new URL(window.location.href);
+  const inputDisabled =
+    !activeSessionId ||
+    invalidRequestedSession ||
+    (activeSession && activeSession.is_ended) ||
+    sending;
 
-    if (sessionId) {
-      url.searchParams.set('session', sessionId);
-    } else {
-      url.searchParams.delete('session');
-    }
+  const updateSessionInUrl = useCallback(
+    (sessionId) => {
+      const url = new URL(window.location.href);
 
-    router.replace(`${url.pathname}${url.search}`, { scroll: false });
-  }, [router]);
+      if (sessionId) {
+        url.searchParams.set("session", sessionId);
+      } else {
+        url.searchParams.delete("session");
+      }
+
+      router.replace(`${url.pathname}${url.search}`, { scroll: false });
+    },
+    [router],
+  );
 
   useEffect(() => {
     if (invalidRequestedSession || !activeSessionId) {
       return;
     }
 
-    const currentSessionInUrl = searchParams.get('session');
+    const currentSessionInUrl = searchParams.get("session");
     if (currentSessionInUrl !== activeSessionId) {
       updateSessionInUrl(activeSessionId);
     }
-  }, [activeSessionId, invalidRequestedSession, searchParams, updateSessionInUrl]);
+  }, [
+    activeSessionId,
+    invalidRequestedSession,
+    searchParams,
+    updateSessionInUrl,
+  ]);
+
+  useEffect(() => {
+    if (invalidRequestedSession) {
+      return;
+    }
+
+    if (!messageEndRef.current) {
+      return;
+    }
+
+    messageEndRef.current.scrollIntoView({ block: "end" });
+  }, [messages, invalidRequestedSession, activeSessionId]);
 
   function startEditingSession(session) {
     setEditingSessionId(session.id);
-    setEditingTitle(session.title || 'New session');
+    setEditingTitle(session.title || "New session");
   }
 
   function cancelEditingSession() {
     setEditingSessionId(null);
-    setEditingTitle('');
+    setEditingTitle("");
   }
 
   async function saveSessionTitle(event, sessionId) {
@@ -77,12 +109,12 @@ export default function ChatClient({
 
     const title = editingTitle.trim();
     if (!title) {
-      toast.error('Session title cannot be empty');
+      toast.error("Session title cannot be empty");
       return;
     }
 
     if (title.length > 120) {
-      toast.error('Session title must be 120 characters or less');
+      toast.error("Session title must be 120 characters or less");
       return;
     }
 
@@ -90,18 +122,22 @@ export default function ChatClient({
     try {
       const payload = await parseResponse(
         await fetch(`/api/chat/sessions/${sessionId}`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ title }),
         }),
       );
 
       const updatedSession = payload.session;
-      setSessions((prev) => prev.map((session) => (session.id === updatedSession.id ? updatedSession : session)));
+      setSessions((prev) =>
+        prev.map((session) =>
+          session.id === updatedSession.id ? updatedSession : session,
+        ),
+      );
       cancelEditingSession();
-      toast.success('Session title updated');
+      toast.success("Session title updated");
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -112,7 +148,9 @@ export default function ChatClient({
   async function loadSessionMessages(sessionId) {
     setLoadingMessages(true);
     try {
-      const payload = await parseResponse(await fetch(`/api/chat/sessions/${sessionId}`));
+      const payload = await parseResponse(
+        await fetch(`/api/chat/sessions/${sessionId}`),
+      );
       setMessages(payload.messages || []);
       setActiveSessionId(sessionId);
       setInvalidRequestedSession(false);
@@ -127,8 +165,8 @@ export default function ChatClient({
   async function createSession() {
     try {
       const payload = await parseResponse(
-        await fetch('/api/chat/sessions', {
-          method: 'POST',
+        await fetch("/api/chat/sessions", {
+          method: "POST",
         }),
       );
 
@@ -139,7 +177,7 @@ export default function ChatClient({
       setInvalidRequestedSession(false);
       cancelEditingSession();
       updateSessionInUrl(newSession.id);
-      toast.success('Started a new session');
+      toast.success("Started a new session");
     } catch (error) {
       toast.error(error.message);
     }
@@ -153,13 +191,17 @@ export default function ChatClient({
     try {
       const payload = await parseResponse(
         await fetch(`/api/chat/sessions/${activeSessionId}`, {
-          method: 'PATCH',
+          method: "PATCH",
         }),
       );
 
       const updatedSession = payload.session;
-      setSessions((prev) => prev.map((session) => (session.id === updatedSession.id ? updatedSession : session)));
-      toast.success('Session ended');
+      setSessions((prev) =>
+        prev.map((session) =>
+          session.id === updatedSession.id ? updatedSession : session,
+        ),
+      );
+      toast.success("Session ended");
     } catch (error) {
       toast.error(error.message);
     }
@@ -174,11 +216,11 @@ export default function ChatClient({
     }
 
     setSending(true);
-    setInput('');
+    setInput("");
 
     const optimisticMessage = {
       id: `optimistic-${Date.now()}`,
-      role: 'user',
+      role: "user",
       content,
       created_at: new Date().toISOString(),
     };
@@ -187,10 +229,10 @@ export default function ChatClient({
 
     try {
       const payload = await parseResponse(
-        await fetch('/api/chat/messages', {
-          method: 'POST',
+        await fetch("/api/chat/messages", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             sessionId: activeSessionId,
@@ -201,7 +243,9 @@ export default function ChatClient({
 
       const insertedMessages = payload.messages || [];
       setMessages((prev) => {
-        const withoutOptimistic = prev.filter((message) => message.id !== optimisticMessage.id);
+        const withoutOptimistic = prev.filter(
+          (message) => message.id !== optimisticMessage.id,
+        );
         return [...withoutOptimistic, ...insertedMessages];
       });
 
@@ -211,8 +255,9 @@ export default function ChatClient({
             return session;
           }
 
-          if (!session.title || session.title === 'New session') {
-            const title = content.length > 40 ? `${content.slice(0, 37)}...` : content;
+          if (!session.title || session.title === "New session") {
+            const title =
+              content.length > 40 ? `${content.slice(0, 37)}...` : content;
             return {
               ...session,
               title,
@@ -224,7 +269,9 @@ export default function ChatClient({
         }),
       );
     } catch (error) {
-      setMessages((prev) => prev.filter((message) => message.id !== optimisticMessage.id));
+      setMessages((prev) =>
+        prev.filter((message) => message.id !== optimisticMessage.id),
+      );
       toast.error(error.message);
       setInput(content);
     } finally {
@@ -233,17 +280,49 @@ export default function ChatClient({
   }
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
-      <aside className="flex min-h-0 flex-col rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
-        <button
-          type="button"
-          className="w-full rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
-          onClick={createSession}
-        >
-          New session
-        </button>
+    <div className="flex h-full min-h-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <aside className="flex h-full min-h-0 w-72 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50">
+        <div className="shrink-0 border-b border-zinc-200 p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+            Chat Workspace
+          </p>
+          <p className="mt-1 truncate text-sm font-semibold text-zinc-900">
+            {userName}
+          </p>
 
-        <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
+          <button
+            type="button"
+            className="mt-3 w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-700"
+            onClick={createSession}
+          >
+            New chat
+          </button>
+
+          <div className="mt-2 flex gap-2 text-xs">
+            <Link
+              className="rounded-md border border-zinc-300 px-2 py-1 font-medium text-zinc-700 hover:bg-zinc-200"
+              href="/user"
+            >
+              User
+            </Link>
+            {isAdmin ? (
+              <Link
+                className="rounded-md border border-zinc-300 px-2 py-1 font-medium text-zinc-700 hover:bg-zinc-200"
+                href="/admin/users/all"
+              >
+                Admin
+              </Link>
+            ) : null}
+            <Link
+              className="rounded-md border border-zinc-300 px-2 py-1 font-medium text-zinc-700 hover:bg-zinc-200"
+              href="/logout"
+            >
+              Logout
+            </Link>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
           <ul className="space-y-2">
             {sessions.map((session) => {
               const active = session.id === activeSessionId;
@@ -253,12 +332,12 @@ export default function ChatClient({
                 <li key={session.id}>
                   {isEditing ? (
                     <form
-                      className="rounded-md border border-zinc-200 bg-zinc-50 p-2"
+                      className="rounded-lg border border-zinc-300 bg-white p-2"
                       onSubmit={(event) => saveSessionTitle(event, session.id)}
                     >
                       <input
                         type="text"
-                        className="w-full rounded-md border border-zinc-300 px-2 py-1 text-sm outline-none ring-green-500 focus:ring"
+                        className="w-full rounded-md border border-zinc-300 px-2 py-1 text-sm outline-none ring-zinc-700 focus:ring"
                         value={editingTitle}
                         onChange={(event) => setEditingTitle(event.target.value)}
                         maxLength={120}
@@ -267,10 +346,10 @@ export default function ChatClient({
                       <div className="mt-2 flex gap-2">
                         <button
                           type="submit"
-                          className="rounded-md bg-green-600 px-2 py-1 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+                          className="rounded-md bg-zinc-900 px-2 py-1 text-xs font-semibold text-white hover:bg-zinc-700 disabled:opacity-60"
                           disabled={savingTitle}
                         >
-                          {savingTitle ? 'Saving...' : 'Save'}
+                          {savingTitle ? "Saving..." : "Save"}
                         </button>
                         <button
                           type="button"
@@ -284,17 +363,35 @@ export default function ChatClient({
                     </form>
                   ) : (
                     <div
-                      className={`flex items-start gap-2 rounded-md px-2 py-2 ${
-                        active ? 'bg-green-100 text-green-900' : 'bg-zinc-100 text-zinc-700'
+                      className={`flex items-start gap-2 rounded-lg px-2 py-2 ${
+                        active
+                          ? "bg-zinc-900 text-white"
+                          : "bg-zinc-100 text-zinc-800 hover:bg-zinc-200"
                       }`}
                     >
-                      <button type="button" className="min-w-0 flex-1 text-left" onClick={() => loadSessionMessages(session.id)}>
-                        <span className="block truncate text-sm font-medium">{session.title || 'New session'}</span>
-                        <span className="block text-xs text-zinc-500">{session.is_ended ? 'Ended' : 'Active'}</span>
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() => loadSessionMessages(session.id)}
+                      >
+                        <span className="block truncate text-sm font-medium">
+                          {session.title || "New session"}
+                        </span>
+                        <span
+                          className={`block text-xs ${
+                            active ? "text-zinc-300" : "text-zinc-500"
+                          }`}
+                        >
+                          {session.is_ended ? "Ended" : "Active"}
+                        </span>
                       </button>
                       <button
                         type="button"
-                        className="rounded p-1 text-xs text-zinc-500 hover:bg-zinc-200"
+                        className={`rounded p-1 text-xs ${
+                          active
+                            ? "text-zinc-300 hover:bg-zinc-800"
+                            : "text-zinc-500 hover:bg-zinc-300"
+                        }`}
                         onClick={() => startEditingSession(session)}
                         aria-label="Edit session name"
                         title="Edit session name"
@@ -310,49 +407,77 @@ export default function ChatClient({
         </div>
       </aside>
 
-      <section className="flex min-h-0 flex-col rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
-          <div>
-            <h1 className="text-lg font-semibold text-zinc-900">Chat</h1>
-            <p className="text-xs text-zinc-500">Assistant replies are stubbed as “Hello World”.</p>
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+        <header className="shrink-0 border-b border-zinc-200 px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-semibold text-zinc-900">
+                {activeSession?.title || "New chat"}
+              </h1>
+              <p className="text-xs text-zinc-500">
+                {activeSession?.is_ended ? "Session ended" : "Session active"}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={endCurrentSession}
+              disabled={!activeSession || activeSession.is_ended}
+            >
+              End session
+            </button>
           </div>
-          <button
-            type="button"
-            className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-            onClick={endCurrentSession}
-            disabled={!activeSession || activeSession.is_ended}
-          >
-            End session
-          </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          {invalidRequestedSession ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-              <p className="text-sm text-zinc-600">The session doesn&apos;t exist, please create a new one.</p>
-              <button
-                type="button"
-                className="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                onClick={createSession}
-              >
-                Create new session
-              </button>
-            </div>
-          ) : (
-            <>
-              {loadingMessages ? <p className="text-sm text-zinc-500">Loading messages...</p> : null}
-              {!messages.length && !loadingMessages ? (
-                <p className="text-sm text-zinc-500">No messages yet. Start the conversation.</p>
-              ) : null}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-6">
+            {invalidRequestedSession ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+                <p className="text-sm text-zinc-600">
+                  The session doesn&apos;t exist, please create a new one.
+                </p>
+                <button
+                  type="button"
+                  className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-700"
+                  onClick={createSession}
+                >
+                  Create new session
+                </button>
+              </div>
+            ) : null}
 
-              <div className="space-y-3">
+            {!invalidRequestedSession && loadingMessages ? (
+              <div className="flex flex-1 items-center justify-center">
+                <p className="text-sm text-zinc-500">Loading messages...</p>
+              </div>
+            ) : null}
+
+            {!invalidRequestedSession &&
+            !loadingMessages &&
+            !messages.length ? (
+              <div className="flex flex-1 items-center justify-center">
+                <p className="text-sm text-zinc-500">
+                  No messages yet. Start the conversation.
+                </p>
+              </div>
+            ) : null}
+
+            {!invalidRequestedSession &&
+            !loadingMessages &&
+            messages.length > 0 ? (
+              <div className="space-y-4">
                 {messages.map((message) => {
-                  const isUser = message.role === 'user';
+                  const isUser = message.role === "user";
                   return (
-                    <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      key={message.id}
+                      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                    >
                       <div
-                        className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
-                          isUser ? 'bg-green-600 text-white' : 'bg-green-100 text-green-900'
+                        className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                          isUser
+                            ? "bg-zinc-900 text-white"
+                            : "bg-zinc-100 text-zinc-900"
                         }`}
                       >
                         {message.content}
@@ -361,26 +486,28 @@ export default function ChatClient({
                   );
                 })}
               </div>
-            </>
-          )}
+            ) : null}
+
+            <div ref={messageEndRef} />
+          </div>
         </div>
 
-        <form className="border-t border-zinc-200 p-3" onSubmit={handleSend}>
-          <div className="flex gap-2">
+        <form className="shrink-0 border-t border-zinc-200 bg-white" onSubmit={handleSend}>
+          <div className="mx-auto flex w-full max-w-3xl gap-2 px-4 py-3">
             <input
               type="text"
-              className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-green-500 focus:ring"
-              placeholder="Type a message..."
+              className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-zinc-700 focus:ring disabled:cursor-not-allowed disabled:bg-zinc-100"
+              placeholder="Message..."
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              disabled={!activeSessionId || invalidRequestedSession || (activeSession && activeSession.is_ended) || sending}
+              disabled={inputDisabled}
             />
             <button
               type="submit"
-              className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!activeSessionId || invalidRequestedSession || !input.trim() || (activeSession && activeSession.is_ended) || sending}
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={inputDisabled || !input.trim()}
             >
-              {sending ? 'Sending...' : 'Send'}
+              {sending ? "Sending..." : "Send"}
             </button>
           </div>
         </form>
