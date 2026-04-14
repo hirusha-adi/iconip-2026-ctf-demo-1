@@ -320,7 +320,7 @@ export default function ChatClient({
                 </Link>
               ) : null}
               <Link
-                className="cyber-btn cyber-btn-outline !h-8 !min-h-0 !w-8 !p-0"
+                className="cyber-btn cyber-btn-outline !h-8 !min-h-0 !w-8 !border-[#00d4ff] !p-0 !text-[#00d4ff]"
                 href="/user"
                 aria-label="User settings"
                 title="User settings"
@@ -328,7 +328,7 @@ export default function ChatClient({
                 <UserIcon />
               </Link>
               <Link
-                className="cyber-btn cyber-btn-ghost !h-8 !min-h-0 !w-8 !p-0"
+                className="cyber-btn cyber-btn-danger !h-8 !min-h-0 !w-8 !p-0"
                 href="/logout"
                 aria-label="Logout"
                 title="Logout"
@@ -443,7 +443,7 @@ export default function ChatClient({
             </div>
             <button
               type="button"
-              className="cyber-btn cyber-btn-outline"
+              className="cyber-btn cyber-btn-danger"
               onClick={endCurrentSession}
               disabled={!activeSession || activeSession.is_ended}
             >

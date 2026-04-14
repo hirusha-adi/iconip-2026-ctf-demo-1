@@ -9,22 +9,22 @@ export default async function UserPage() {
   return (
     <main className="flex flex-1">
       <div className="cyber-shell">
-        <header className="mb-4 flex items-center justify-end">
-          <div className="flex gap-2">
-            <Link className="cyber-btn cyber-btn-outline" href="/chat">
-              Chat
-            </Link>
-            <Link className="cyber-btn cyber-btn-ghost" href="/logout">
-              Logout
-            </Link>
-          </div>
+        <header className="mb-4 flex items-center justify-between">
+          <Link className="cyber-btn cyber-btn-outline" href="/chat">
+            Chat
+          </Link>
+          <Link className="cyber-btn cyber-btn-ghost" href="/logout">
+            Logout
+          </Link>
         </header>
 
-        <UserSettingsClient
-          initialFirstName={profile.first_name}
-          initialLastName={profile.last_name}
-          initialEmail={profile.email}
-        />
+        <div className="flex justify-center">
+          <UserSettingsClient
+            initialFirstName={profile.first_name}
+            initialLastName={profile.last_name}
+            initialEmail={profile.email}
+          />
+        </div>
       </div>
     </main>
   );
