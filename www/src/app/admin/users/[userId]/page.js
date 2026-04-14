@@ -231,44 +231,52 @@ export default async function AdminUserDetailPage({ params }) {
       </div>
 
       <Card title="Chat history">
-        <div className="space-y-3">
-          {detail.sessions.map((session) => {
-            const sessionMessages = detail.messages
-              .filter((message) => message.session_id === session.id)
-              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        <div className="cyber-scroll h-[28rem] overflow-y-auto pr-1">
+          <div className="space-y-3">
+            {detail.sessions.map((session) => {
+              const sessionMessages = detail.messages
+                .filter((message) => message.session_id === session.id)
+                .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-            return (
-              <article key={session.id} className="cyber-note cyber-note-info">
-                <p className="text-sm font-semibold text-foreground">{session.title}</p>
-                <p className="cyber-muted text-xs">
-                  Created: {new Date(session.created_at).toLocaleString()} {session.is_ended ? '• Ended' : ''}
-                </p>
-                <div className="mt-2 space-y-1">
-                  {sessionMessages.map((message) => (
-                    <p key={message.id} className="text-sm text-foreground">
-                      <span className="font-medium">{message.role}:</span> {message.content}
-                    </p>
-                  ))}
-                  {!sessionMessages.length ? <p className="cyber-muted text-sm">No messages in this session.</p> : null}
-                </div>
-              </article>
-            );
-          })}
-          {!detail.sessions.length ? <p className="cyber-muted text-sm">No chat sessions yet.</p> : null}
+              return (
+                <article key={session.id} className="cyber-note cyber-note-info">
+                  <p className="text-sm font-semibold text-foreground">{session.title}</p>
+                  <p className="cyber-muted text-xs">
+                    Created: {new Date(session.created_at).toLocaleString()} {session.is_ended ? '• Ended' : ''}
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    {sessionMessages.map((message) => (
+                      <p key={message.id} className="text-sm text-foreground">
+                        <span className="font-medium">{message.role}:</span> {message.content}
+                      </p>
+                    ))}
+                    {!sessionMessages.length ? <p className="cyber-muted text-sm">No messages in this session.</p> : null}
+                  </div>
+                </article>
+              );
+            })}
+            {!detail.sessions.length ? <p className="cyber-muted text-sm">No chat sessions yet.</p> : null}
+          </div>
         </div>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Auth events">
-          <EventList items={detail.authEvents} emptyText="No auth events recorded." />
+          <div className="cyber-scroll h-[28rem] overflow-y-auto pr-1">
+            <EventList items={detail.authEvents} emptyText="No auth events recorded." />
+          </div>
         </Card>
         <Card title="Route access logs">
-          <EventList items={detail.routeLogs} emptyText="No route logs recorded." />
+          <div className="cyber-scroll h-[28rem] overflow-y-auto pr-1">
+            <EventList items={detail.routeLogs} emptyText="No route logs recorded." />
+          </div>
         </Card>
       </div>
 
       <Card title="Admin change log">
-        <EventList items={detail.adminLogs} emptyText="No admin changes recorded." />
+        <div className="cyber-scroll h-[28rem] overflow-y-auto pr-1">
+          <EventList items={detail.adminLogs} emptyText="No admin changes recorded." />
+        </div>
       </Card>
     </section>
   );
