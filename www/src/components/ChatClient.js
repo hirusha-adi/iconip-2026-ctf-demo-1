@@ -303,7 +303,7 @@ export default function ChatClient({
     <div className="cyber-card flex h-full min-h-0 overflow-hidden">
       <aside className="flex h-full min-h-0 w-72 shrink-0 flex-col border-r border-[#2a2a3a] bg-[#101018]">
         <div className="shrink-0 border-b border-[#2a2a3a] p-3">
-          <p className="cyber-kicker">Chat Workspace</p>
+          <p className="cyber-kicker">ICONIP CTF</p>
           <div className="mt-1 flex items-center justify-between gap-2">
             <p className="cyber-title truncate text-sm font-semibold text-foreground">
               {userName}
@@ -338,7 +338,11 @@ export default function ChatClient({
             </div>
           </div>
 
-          <button type="button" className="cyber-btn cyber-btn-solid mt-3 w-full" onClick={createSession}>
+          <button
+            type="button"
+            className="cyber-btn cyber-btn-solid mt-3 w-full"
+            onClick={createSession}
+          >
             New chat
           </button>
         </div>
@@ -361,7 +365,9 @@ export default function ChatClient({
                           type="text"
                           className="cyber-input"
                           value={editingTitle}
-                          onChange={(event) => setEditingTitle(event.target.value)}
+                          onChange={(event) =>
+                            setEditingTitle(event.target.value)
+                          }
                           maxLength={120}
                           autoFocus
                         />
@@ -471,7 +477,9 @@ export default function ChatClient({
 
             {!invalidRequestedSession && loadingMessages ? (
               <div className="flex flex-1 items-center justify-center">
-                <p className="cyber-note cyber-note-info">Loading messages...</p>
+                <p className="cyber-note cyber-note-info">
+                  Loading messages...
+                </p>
               </div>
             ) : null}
 
@@ -515,7 +523,10 @@ export default function ChatClient({
           </div>
         </div>
 
-        <form className="shrink-0 border-t border-[#2a2a3a] bg-[#11111b]" onSubmit={handleSend}>
+        <form
+          className="shrink-0 border-t border-[#2a2a3a] bg-[#11111b]"
+          onSubmit={handleSend}
+        >
           <div className="mx-auto flex w-full max-w-3xl items-end gap-2 px-4 py-3">
             <div className="cyber-input-wrap flex-1">
               <textarea
