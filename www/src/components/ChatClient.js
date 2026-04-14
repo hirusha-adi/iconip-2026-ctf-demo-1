@@ -25,6 +25,9 @@ export default function ChatClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const messageEndRef = useRef(null);
+  const composerTextareaRef = useRef(null);
+  const MIN_COMPOSER_HEIGHT = 44;
+  const MAX_COMPOSER_HEIGHT = 128;
 
   const [sessions, setSessions] = useState(initialSessions);
   const [activeSessionId, setActiveSessionId] = useState(initialSessionId);
@@ -66,6 +69,19 @@ export default function ChatClient({
     [router],
   );
 
+  const resizeComposer = useCallback(() => {
+    if (!composerTextareaRef.current) {
+      return;
+    }
+
+    composerTextareaRef.current.style.height = "auto";
+    const nextHeight = Math.min(
+      MAX_COMPOSER_HEIGHT,
+      Math.max(MIN_COMPOSER_HEIGHT, composerTextareaRef.current.scrollHeight),
+    );
+    composerTextareaRef.current.style.height = `${nextHeight}px`;
+  }, []);
+
   useEffect(() => {
     if (invalidRequestedSession || !activeSessionId) {
       return;
@@ -93,6 +109,10 @@ export default function ChatClient({
 
     messageEndRef.current.scrollIntoView({ block: "end" });
   }, [messages, invalidRequestedSession, activeSessionId]);
+
+  useEffect(() => {
+    resizeComposer();
+  }, [input, resizeComposer]);
 
   function startEditingSession(session) {
     setEditingSessionId(session.id);
@@ -284,25 +304,43 @@ export default function ChatClient({
       <aside className="flex h-full min-h-0 w-72 shrink-0 flex-col border-r border-[#2a2a3a] bg-[#101018]">
         <div className="shrink-0 border-b border-[#2a2a3a] p-3">
           <p className="cyber-kicker">Chat Workspace</p>
-          <p className="cyber-title mt-1 truncate text-sm font-semibold text-foreground">{userName}</p>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <p className="cyber-title truncate text-sm font-semibold text-foreground">
+              {userName}
+            </p>
+            <div className="flex items-center gap-1">
+              {isAdmin ? (
+                <Link
+                  className="cyber-btn cyber-btn-secondary !h-8 !min-h-0 !w-8 !p-0"
+                  href="/admin/users/"
+                  aria-label="Admin"
+                  title="Admin"
+                >
+                  <AdminIcon />
+                </Link>
+              ) : null}
+              <Link
+                className="cyber-btn cyber-btn-outline !h-8 !min-h-0 !w-8 !p-0"
+                href="/user"
+                aria-label="User settings"
+                title="User settings"
+              >
+                <UserIcon />
+              </Link>
+              <Link
+                className="cyber-btn cyber-btn-ghost !h-8 !min-h-0 !w-8 !p-0"
+                href="/logout"
+                aria-label="Logout"
+                title="Logout"
+              >
+                <LogoutIcon />
+              </Link>
+            </div>
+          </div>
 
           <button type="button" className="cyber-btn cyber-btn-solid mt-3 w-full" onClick={createSession}>
             New chat
           </button>
-
-          <div className="mt-2 flex gap-2 text-xs">
-            <Link className="cyber-btn cyber-btn-outline !min-h-0 !px-2 !py-1 !text-[10px]" href="/user">
-              User
-            </Link>
-            {isAdmin ? (
-              <Link className="cyber-btn cyber-btn-secondary !min-h-0 !px-2 !py-1 !text-[10px]" href="/admin/users/all">
-                Admin
-              </Link>
-            ) : null}
-            <Link className="cyber-btn cyber-btn-ghost !min-h-0 !px-2 !py-1 !text-[10px]" href="/logout">
-              Logout
-            </Link>
-          </div>
         </div>
 
         <div className="cyber-scroll min-h-0 flex-1 overflow-y-auto p-3">
@@ -461,7 +499,7 @@ export default function ChatClient({
                       <div
                         className={`max-w-[85%] px-4 py-2.5 text-sm leading-relaxed ${
                           isUser
-                            ? "cyber-note border-[#00ff88] bg-[rgba(0,255,136,0.2)] text-foreground"
+                            ? "cyber-note border-[#4dffbe] bg-[rgba(0,255,136,0.32)] text-[#f4fff9] shadow-[var(--box-shadow-neon-sm)]"
                             : "cyber-note border-[#2a2a3a] bg-[#151525] text-foreground"
                         }`}
                       >
@@ -478,15 +516,22 @@ export default function ChatClient({
         </div>
 
         <form className="shrink-0 border-t border-[#2a2a3a] bg-[#11111b]" onSubmit={handleSend}>
-          <div className="mx-auto flex w-full max-w-3xl gap-2 px-4 py-3">
+          <div className="mx-auto flex w-full max-w-3xl items-end gap-2 px-4 py-3">
             <div className="cyber-input-wrap flex-1">
-              <input
-                type="text"
-                className="cyber-input"
+              <textarea
+                ref={composerTextareaRef}
+                className="cyber-input cyber-scroll max-h-32 min-h-[44px] resize-none overflow-y-auto py-2.5 leading-6"
                 placeholder="Message..."
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    event.currentTarget.form?.requestSubmit();
+                  }
+                }}
                 disabled={inputDisabled}
+                rows={1}
               />
             </div>
             <button
@@ -500,5 +545,63 @@ export default function ChatClient({
         </form>
       </section>
     </div>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M19 21a7 7 0 0 0-14 0" />
+      <circle cx="12" cy="8" r="4" />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
+
+function AdminIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3 5 6v6c0 5 3.5 8 7 9 3.5-1 7-4 7-9V6l-7-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
   );
 }
