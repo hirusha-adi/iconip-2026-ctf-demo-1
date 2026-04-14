@@ -324,6 +324,33 @@ export async function endChatSession(sessionId, clerkUserId) {
   return data ?? null;
 }
 
+export async function updateChatSessionTitle(sessionId, clerkUserId, title) {
+  const supabase = getSupabaseAdmin();
+
+  const trimmedTitle = String(title || '').trim();
+  if (!trimmedTitle) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('chat_sessions')
+    .update({
+      title: trimmedTitle,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', sessionId)
+    .eq('clerk_user_id', clerkUserId)
+    .is('deleted_at', null)
+    .select('*')
+    .maybeSingle();
+
+  if (error && !isNoRowsError(error)) {
+    throw error;
+  }
+
+  return data ?? null;
+}
+
 export async function getChatMessages(sessionId, clerkUserId) {
   const session = await getChatSession(sessionId, clerkUserId);
   if (!session) {
@@ -370,20 +397,23 @@ export async function appendChatExchange({ sessionId, clerkUserId, userMessage, 
     throw error;
   }
 
-  const title = userMessage.length > 40 ? `${userMessage.slice(0, 37)}...` : userMessage;
+  const session = await getChatSession(sessionId, clerkUserId);
+  if (session && (!session.title || session.title === 'New session')) {
+    const title = userMessage.length > 40 ? `${userMessage.slice(0, 37)}...` : userMessage;
 
-  const { error: sessionError } = await supabase
-    .from('chat_sessions')
-    .update({
-      title: title || 'New session',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', sessionId)
-    .eq('clerk_user_id', clerkUserId)
-    .is('deleted_at', null);
+    const { error: sessionError } = await supabase
+      .from('chat_sessions')
+      .update({
+        title: title || 'New session',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', sessionId)
+      .eq('clerk_user_id', clerkUserId)
+      .is('deleted_at', null);
 
-  if (sessionError) {
-    throw sessionError;
+    if (sessionError) {
+      throw sessionError;
+    }
   }
 
   return data;

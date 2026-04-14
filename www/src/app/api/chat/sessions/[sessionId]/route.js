@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-import { endChatSession, getChatMessages, getProfileByClerkId, touchLastSeen } from '@/lib/server/db';
+import { endChatSession, getChatMessages, getProfileByClerkId, touchLastSeen, updateChatSessionTitle } from '@/lib/server/db';
 
 function isAccessDenied(profile) {
   return !profile || !profile.is_verified || profile.is_disabled;
@@ -56,5 +56,44 @@ export async function PATCH(_request, { params }) {
   } catch (error) {
     console.error('Failed to end session:', error);
     return NextResponse.json({ error: 'Failed to end session' }, { status: 500 });
+  }
+}
+
+export async function PUT(request, { params }) {
+  try {
+    const { sessionId } = await params;
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const profile = await getProfileByClerkId(userId);
+    if (isAccessDenied(profile)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const title = String(body.title || '').trim();
+
+    if (!title) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    if (title.length > 120) {
+      return NextResponse.json({ error: 'Title must be 120 characters or less' }, { status: 400 });
+    }
+
+    const session = await updateChatSessionTitle(sessionId, userId, title);
+    if (!session) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+
+    await touchLastSeen(userId, false);
+
+    return NextResponse.json({ session });
+  } catch (error) {
+    console.error('Failed to rename session:', error);
+    return NextResponse.json({ error: 'Failed to rename session' }, { status: 500 });
   }
 }
