@@ -194,7 +194,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
       }
 
       if (signIn.status === 'complete') {
-        setError('Email MFA is required. Enable email second-factor in Clerk to complete login.');
+        await finishLogin();
         return;
       }
 
