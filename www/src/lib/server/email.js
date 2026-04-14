@@ -16,11 +16,8 @@ function getResend() {
 
 export async function sendVerificationEmail({ email, token }) {
   const verifyUrl = `${APP_BASE_URL}/api/auth/verify-email?token=${token}`;
-  console.log(
-    `Sending verification email to ${email} with token ${token} (verify URL: ${verifyUrl})`,
-  );
 
-  await getResend().emails.send({
+  const payload = {
     from: env.RESEND_FROM_EMAIL,
     to: email,
     subject: "Verify your ICONIP 2026 CTF account",
@@ -33,5 +30,33 @@ export async function sendVerificationEmail({ email, token }) {
       </div>
     `,
     text: `Verify your account by visiting: ${verifyUrl}`,
+  };
+
+  console.log("[email] sending", {
+    to: payload.to,
+    from: payload.from,
+    subject: payload.subject,
   });
+
+  try {
+    const result = await getResend().emails.send(payload);
+
+    console.log("[email] sent", {
+      to: payload.to,
+      subject: payload.subject,
+      id: result?.data?.id ?? null,
+      error: result?.error ?? null,
+    });
+
+    if (result?.error) {
+      throw new Error(result.error.message || "Email provider returned an error");
+    }
+  } catch (error) {
+    console.error("[email] failed", {
+      to: payload.to,
+      subject: payload.subject,
+      error: error?.message || error,
+    });
+    throw error;
+  }
 }
