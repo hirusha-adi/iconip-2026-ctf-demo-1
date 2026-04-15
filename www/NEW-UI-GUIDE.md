@@ -60,9 +60,9 @@ The entire palette is built around a single base cool grey. **All visual interes
 - **Background**: `#E0E5EC` — The base "cool clay" surface. Everything is molded from this.
 - **Foreground**: `#3D4852` — Dark blue-grey for primary text. Excellent contrast (7.5:1 ratio) for optimal readability.
 - **Muted**: `#6B7280` — Cool grey for secondary text with WCAG AA compliant contrast (4.6:1 ratio on the background).
-- **Accent**: `#6C63FF` — Soft violet for interactive highlights. Used sparingly for CTAs and focus states.
-- **Accent Light**: `#8B84FF` — Lighter violet for gradients and hover states.
-- **Accent Secondary**: `#38B2AC` — Teal for success states, checkmarks, and positive indicators.
+- **Accent (Dark Blue)**: `#152852` — Primary blue for interactive highlights, CTAs, and focus states.
+- **Accent Light (Blue Variant)**: `#2A4C8A` — Lighter blue for gradients and hover states.
+- **Accent Secondary (Blue Variant)**: `#3E73C4` — Supporting blue for secondary emphasis and positive indicators.
 - **Border**: `transparent` — Neumorphism **never** uses borders; shadows define all edges.
 
 **Shadow Colors** (CRITICAL - RGBA for Smoothness):
@@ -135,7 +135,7 @@ box-shadow: inset 3px 3px 6px rgb(163,177,198,0.6), inset -3px -3px 6px rgba(255
 - **Default State**: Extruded shadow.
 - **Hover State**: `translate-y-[-1px]` (slight lift) + `Extruded Hover` shadow.
 - **Active/Pressed State**: `translate-y-[0.5px]` (physical press) + `Inset Small` shadow (or standard inset depending on size).
-- **Primary**: Accent background `#6C63FF`. Active state uses specific rgba inset shadows to work on color.
+- **Primary**: Accent background `#152852`. Active state uses specific rgba inset shadows to work on color.
 - **Secondary**: Background `#E0E5EC` (match page).
 
 ### Cards
@@ -179,7 +179,7 @@ box-shadow: inset 3px 3px 6px rgb(163,177,198,0.6), inset -3px -3px 6px rgba(255
 - **Contrast**:
   - Primary text `#3D4852` on `#E0E5EC`: 7.5:1 (WCAG AAA)
   - Muted text `#6B7280` on `#E0E5EC`: 4.6:1 (WCAG AA)
-- **Focus States**: Visible 2px accent rings (`ring-2 ring-[#6C63FF]`) with 2px offset on `#E0E5EC` background. Mandatory on all interactive elements.
+- **Focus States**: Visible 2px accent rings (`ring-2 ring-[#152852]`) with 2px offset on `#E0E5EC` background. Mandatory on all interactive elements.
 - **Touch Targets**: Minimum 44x44px for mobile (buttons use `h-12 w-12` = 48px minimum).
 - **Mobile Navigation**: Hamburger menu with clear open/close states (Menu/X icons).
 - **Keyboard Navigation**: Full keyboard support with visible focus indicators on all links and buttons.
