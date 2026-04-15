@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { ExternalLink, LogIn, UserPlus } from 'lucide-react';
 
 import PublicHeader from '@/components/PublicHeader';
 
@@ -35,14 +36,17 @@ export default async function HomePage() {
                 target="_blank"
                 rel="noreferrer"
               >
+                <ExternalLink size={14} className="mr-1 inline" />
                 Visit the official ICONIP 2026 website
               </a>
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link className="cyber-btn cyber-btn-solid" href="/login">
+                  <LogIn size={16} />
                   Login
                 </Link>
                 <Link className="cyber-btn cyber-btn-secondary" href="/register">
+                  <UserPlus size={16} />
                   Register
                 </Link>
               </div>

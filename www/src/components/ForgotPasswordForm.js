@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { LogIn, Mail } from 'lucide-react';
 
 const GENERIC_MESSAGE = 'If an account exists for this email, check your inbox for a password reset link.';
 
@@ -66,12 +67,17 @@ export default function ForgotPasswordForm() {
         </label>
 
         <button type="submit" className="cyber-btn cyber-btn-solid w-full" disabled={submitting}>
+          <Mail size={16} />
           {submitting ? 'Sending...' : 'Send Reset Link'}
         </button>
       </form>
 
       <p className="cyber-muted mt-4 text-sm">
-        Remembered your password? <Link className="cyber-link" href="/login">Back to login</Link>
+        Remembered your password?{' '}
+        <Link className="cyber-link" href="/login">
+          <LogIn size={14} className="mr-1 inline" />
+          Back to login
+        </Link>
       </p>
     </div>
   );

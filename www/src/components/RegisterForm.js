@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { LogIn, UserPlus } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 async function parseResponse(response) {
@@ -67,6 +68,7 @@ export default function RegisterForm() {
           multi-factor authentication with an authenticator app and backup codes.
         </p>
         <Link className="cyber-link mt-5 inline-block text-sm" href="/login">
+          <LogIn size={14} className="mr-1 inline" />
           Go to login
         </Link>
       </section>
@@ -155,13 +157,18 @@ export default function RegisterForm() {
             className="cyber-btn cyber-btn-solid w-full"
             disabled={submitting}
           >
+            <UserPlus size={16} />
             {submitting ? 'Registering...' : 'Register'}
           </button>
         </div>
       </form>
 
       <p className="cyber-muted mt-4 text-sm">
-        Already have an account? <Link className="cyber-link" href="/login">Login</Link>
+        Already have an account?{' '}
+        <Link className="cyber-link" href="/login">
+          <LogIn size={14} className="mr-1 inline" />
+          Login
+        </Link>
       </p>
     </section>
   );

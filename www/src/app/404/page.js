@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { House } from 'lucide-react';
 
 import PublicHeader from '@/components/PublicHeader';
 
@@ -14,6 +15,7 @@ export default function Custom404Page() {
             <h1 className="cyber-title cyber-title-glitch mt-3 text-5xl font-black">404</h1>
             <p className="cyber-muted mt-3 text-sm">This page does not exist.</p>
             <Link className="cyber-btn cyber-btn-solid mt-6" href="/">
+              <House size={16} />
               Back home
             </Link>
           </section>

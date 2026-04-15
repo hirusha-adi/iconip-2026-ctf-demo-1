@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { KeyRound, LogIn, Mail } from 'lucide-react';
 
 export default function ResetPasswordForm({ token = '' }) {
   const [password, setPassword] = useState('');
@@ -57,6 +58,7 @@ export default function ResetPasswordForm({ token = '' }) {
           Reset link is invalid or missing. Please request a new password reset email.
         </p>
         <Link className="cyber-btn cyber-btn-outline mt-4" href="/forgot-password">
+          <Mail size={16} />
           Request New Link
         </Link>
       </div>
@@ -72,6 +74,7 @@ export default function ResetPasswordForm({ token = '' }) {
           Your password has been reset. You can now log in with your new password.
         </p>
         <Link className="cyber-btn cyber-btn-solid mt-4" href="/login">
+          <LogIn size={16} />
           Go To Login
         </Link>
       </div>
@@ -116,12 +119,17 @@ export default function ResetPasswordForm({ token = '' }) {
         </label>
 
         <button type="submit" className="cyber-btn cyber-btn-solid w-full" disabled={submitting}>
+          <KeyRound size={16} />
           {submitting ? 'Resetting...' : 'Reset Password'}
         </button>
       </form>
 
       <p className="cyber-muted mt-4 text-sm">
-        Back to <Link className="cyber-link" href="/login">Login</Link>
+        Back to{' '}
+        <Link className="cyber-link" href="/login">
+          <LogIn size={14} className="mr-1 inline" />
+          Login
+        </Link>
       </p>
     </div>
   );

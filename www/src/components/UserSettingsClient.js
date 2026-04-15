@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { LogIn, Save, Shield, UserRound } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export default function UserSettingsClient({ initialFirstName = '', initialLastName = '', initialEmail = '' }) {
@@ -97,6 +98,7 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
         <p className="cyber-muted mt-1 text-sm">Please sign in to manage your account.</p>
         <p className="mt-4">
           <Link className="cyber-link text-sm" href="/login?next=/user">
+            <LogIn size={14} className="mr-1 inline" />
             Go to login
           </Link>
         </p>
@@ -149,6 +151,7 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
 
                 <div>
                   <button type="submit" className="cyber-btn cyber-btn-solid" disabled={busy === 'name'}>
+                    <UserRound size={16} />
                     {busy === 'name' ? 'Saving...' : 'Save name'}
                   </button>
                 </div>
@@ -203,6 +206,7 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
 
                 <div className="sm:col-span-2">
                   <button type="submit" className="cyber-btn cyber-btn-solid" disabled={busy === 'password'}>
+                    <Save size={16} />
                     {busy === 'password' ? 'Updating...' : 'Update password'}
                   </button>
                 </div>
@@ -215,6 +219,7 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
                 This account uses authenticator application and backup codes for second-factor verification.
               </p>
               <Link className="cyber-link mt-4 inline-block text-sm" href="/setup-mfa">
+                <Shield size={14} className="mr-1 inline" />
                 Manage MFA setup
               </Link>
             </section>

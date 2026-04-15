@@ -768,7 +768,7 @@ export async function appendChatExchange({ sessionId, clerkUserId, userMessage, 
 export async function getAdminUsers() {
   const supabase = getSupabaseAdmin();
 
-  const [usersResult, sessionsResult, messagesResult] = await Promise.all([
+  const [usersResult, sessionsResult, messagesResult, attachmentsResult] = await Promise.all([
     supabase
       .from('profiles')
       .select('*')
@@ -776,6 +776,7 @@ export async function getAdminUsers() {
       .order('created_at', { ascending: false }),
     supabase.from('chat_sessions').select('id', { count: 'exact', head: true }).is('deleted_at', null),
     supabase.from('chat_messages').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+    supabase.from('chat_message_attachments').select('id', { count: 'exact', head: true }).is('deleted_at', null),
   ]);
 
   if (usersResult.error) {
@@ -788,6 +789,10 @@ export async function getAdminUsers() {
 
   if (messagesResult.error) {
     throw messagesResult.error;
+  }
+
+  if (attachmentsResult.error) {
+    throw attachmentsResult.error;
   }
 
   const users = usersResult.data ?? [];
@@ -810,6 +815,7 @@ export async function getAdminUsers() {
       onlineUsers,
       totalChatSessions: sessionsResult.count ?? 0,
       totalMessages: messagesResult.count ?? 0,
+      totalAttachments: attachmentsResult.count ?? 0,
     },
   };
 }

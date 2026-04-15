@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useSignIn } from '@clerk/nextjs';
+import { ArrowLeft, KeyRound, LogIn, Mail, MailCheck, Shield, UserPlus } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const SECOND_FACTOR_METHOD = {
@@ -71,6 +72,18 @@ function getSecondFactorPrompt(method) {
   }
 
   return 'Enter your second-factor code.';
+}
+
+function getSecondFactorMethodIcon(method) {
+  if (method === SECOND_FACTOR_METHOD.TOTP) {
+    return <Shield size={14} />;
+  }
+
+  if (method === SECOND_FACTOR_METHOD.BACKUP_CODE) {
+    return <KeyRound size={14} />;
+  }
+
+  return <Mail size={14} />;
 }
 
 export default function LoginForm({ initialMessage = '', nextPath = '' }) {
@@ -398,6 +411,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
             className="cyber-btn cyber-btn-solid w-full"
             disabled={isBusy}
           >
+            <LogIn size={16} />
             {isBusy ? 'Signing in...' : 'Login'}
           </button>
         </form>
@@ -429,6 +443,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
                   className={`min-h-[48px] px-3 text-center text-base font-semibold capitalize transition-colors duration-300 ${index > 0 ? 'border-l border-[rgba(21,40,82,0.24)]' : ''} ${secondFactorMethod === option.key ? 'bg-[rgba(42,76,138,0.18)] text-[#152852]' : 'bg-transparent text-[rgba(61,72,82,0.92)] hover:bg-[rgba(42,76,138,0.08)]'}`}
                   onClick={() => handleSecondFactorMethodChange(option.key)}
                 >
+                  <span className="mr-2 inline-flex align-middle">{getSecondFactorMethodIcon(option.key)}</span>
                   {option.label}
                 </button>
               ))}
@@ -457,6 +472,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
               className="cyber-btn cyber-btn-solid w-full flex-1"
               disabled={isBusy || !secondFactorCode.trim()}
             >
+              <KeyRound size={16} />
               {isBusy ? 'Verifying...' : 'Verify code'}
             </button>
 
@@ -467,7 +483,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
               aria-label="Back to password"
               title="Back to password"
             >
-              ←
+              <ArrowLeft size={18} />
             </button>
           </div>
         </form>
@@ -479,6 +495,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
           className="cyber-link mt-3 text-sm"
           onClick={handleResendVerification}
         >
+          <MailCheck size={14} className="mr-1 inline" />
           Resend verification email
         </button>
       ) : null}
@@ -486,6 +503,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
       <p className="cyber-muted mt-4 text-sm">
         Need an account?{' '}
         <Link className="cyber-link" href="/register">
+          <UserPlus size={14} className="mr-1 inline" />
           Register
         </Link>
       </p>

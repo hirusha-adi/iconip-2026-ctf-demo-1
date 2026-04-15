@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { CheckCircle2, Copy, Download, LogIn, MessageSquare, RefreshCw, ShieldOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 function getErrorMessage(error, fallback) {
@@ -203,6 +204,7 @@ export default function SetupMfaClient() {
         <h1 className="cyber-title mt-3 text-2xl font-bold text-foreground">Sign in required</h1>
         <p className="cyber-muted mt-2 text-sm">Please sign in before configuring MFA.</p>
         <Link className="cyber-btn cyber-btn-solid mt-5" href="/login">
+          <LogIn size={16} />
           Go to login
         </Link>
       </div>
@@ -222,12 +224,15 @@ export default function SetupMfaClient() {
 
         <div className="mt-5 flex flex-wrap gap-2">
           <button type="button" className="cyber-btn cyber-btn-secondary" onClick={generateBackupCodes} disabled={busy}>
+            <RefreshCw size={16} />
             {busy ? 'Working...' : 'Generate backup codes'}
           </button>
           <button type="button" className="cyber-btn cyber-btn-danger" onClick={handleStartOver} disabled={busy}>
+            <ShieldOff size={16} />
             {busy ? 'Working...' : 'Disable and start over'}
           </button>
           <Link className="cyber-btn cyber-btn-solid" href="/chat">
+            <MessageSquare size={16} />
             Continue to chat
           </Link>
         </div>
@@ -256,18 +261,23 @@ export default function SetupMfaClient() {
 
         <div className="mt-5 flex flex-wrap gap-2">
           <button type="button" className="cyber-btn cyber-btn-secondary" onClick={handleDownloadBackupCodes}>
+            <Download size={16} />
             Download codes
           </button>
           <button type="button" className="cyber-btn cyber-btn-outline" onClick={handleCopyBackupCodes}>
+            <Copy size={16} />
             Copy codes
           </button>
           <button type="button" className="cyber-btn cyber-btn-outline" onClick={generateBackupCodes} disabled={busy}>
+            <RefreshCw size={16} />
             {busy ? 'Working...' : 'Regenerate codes'}
           </button>
           <button type="button" className="cyber-btn cyber-btn-danger" onClick={handleStartOver} disabled={busy}>
+            <ShieldOff size={16} />
             {busy ? 'Working...' : 'Disable and start over'}
           </button>
           <Link className="cyber-btn cyber-btn-solid" href="/chat">
+            <MessageSquare size={16} />
             Continue to chat
           </Link>
         </div>
@@ -334,6 +344,7 @@ export default function SetupMfaClient() {
         </label>
 
         <button type="submit" className="cyber-btn cyber-btn-solid w-full" disabled={verifying || !totpCode.trim()}>
+          <CheckCircle2 size={16} />
           {verifying ? 'Verifying...' : 'Verify and continue'}
         </button>
       </form>

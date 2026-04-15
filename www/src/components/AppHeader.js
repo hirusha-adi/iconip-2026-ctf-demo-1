@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LogOut, MessageSquare, Shield, User } from 'lucide-react';
 
 function buttonClass(active, key, baseClass, activeClass) {
   return active === key ? `cyber-btn ${activeClass}` : `cyber-btn ${baseClass}`;
@@ -18,17 +19,21 @@ export default function AppHeader({ profile, active = '', title = 'Workspace' })
 
       <nav className="cyber-page-actions" aria-label="Account navigation">
         <Link className={buttonClass(active, 'chat', 'cyber-btn-chat', 'cyber-btn-chat-active')} href="/chat">
+          <MessageSquare size={16} />
           Chat
         </Link>
         <Link className={buttonClass(active, 'user', 'cyber-btn-user', 'cyber-btn-user-active')} href="/user">
+          <User size={16} />
           User
         </Link>
         {showAdmin ? (
           <Link className={buttonClass(active, 'admin', 'cyber-btn-admin', 'cyber-btn-admin-active')} href="/admin/users/">
+            <Shield size={16} />
             Admin
           </Link>
         ) : null}
         <Link className="cyber-btn cyber-btn-danger" href="/logout">
+          <LogOut size={16} />
           Logout
         </Link>
       </nav>

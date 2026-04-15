@@ -1,6 +1,18 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Download,
+  Mail,
+  Save,
+  Shield,
+  ShieldOff,
+  UserRoundMinus,
+  UserRoundPlus,
+  XCircle,
+} from 'lucide-react';
 
 import { requirePageAdmin } from '@/lib/server/authz';
 import { getAdminUserDetail, updateUserByAdmin } from '@/lib/server/db';
@@ -141,6 +153,7 @@ export default async function AdminUserDetailPage({ params }) {
           <p className="cyber-muted text-xs">Clerk ID: {detail.profile.clerk_user_id}</p>
         </div>
         <Link className="cyber-btn cyber-btn-outline" href="/admin/users/all">
+          <ArrowLeft size={16} />
           Back
         </Link>
       </div>
@@ -173,6 +186,7 @@ export default async function AdminUserDetailPage({ params }) {
               </div>
             </label>
             <button className="cyber-btn cyber-btn-solid" type="submit">
+              <Save size={16} />
               Save name
             </button>
           </form>
@@ -191,6 +205,7 @@ export default async function AdminUserDetailPage({ params }) {
               </div>
             </label>
             <button className="cyber-btn cyber-btn-solid" type="submit">
+              <Mail size={16} />
               Save email
             </button>
           </form>
@@ -199,6 +214,7 @@ export default async function AdminUserDetailPage({ params }) {
             <form action={toggleVerifiedAction}>
               <input type="hidden" name="nextValue" value={String(!detail.profile.is_verified)} />
               <button className="cyber-btn cyber-btn-outline" type="submit">
+                {detail.profile.is_verified ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
                 {detail.profile.is_verified ? 'De-verify account' : 'Verify account'}
               </button>
             </form>
@@ -206,6 +222,7 @@ export default async function AdminUserDetailPage({ params }) {
             <form action={toggleAdminAction}>
               <input type="hidden" name="nextValue" value={String(!detail.profile.is_admin)} />
               <button className="cyber-btn cyber-btn-secondary" type="submit">
+                {detail.profile.is_admin ? <UserRoundMinus size={16} /> : <UserRoundPlus size={16} />}
                 {detail.profile.is_admin ? 'Remove admin' : 'Make admin'}
               </button>
             </form>
@@ -226,6 +243,7 @@ export default async function AdminUserDetailPage({ params }) {
               </div>
             </label>
             <button className="cyber-btn cyber-btn-danger" type="submit">
+              {detail.profile.is_disabled ? <Shield size={16} /> : <ShieldOff size={16} />}
               {detail.profile.is_disabled ? 'Enable account' : 'Disable account'}
             </button>
           </form>
@@ -274,15 +292,16 @@ export default async function AdminUserDetailPage({ params }) {
                             <div className="mt-2 space-y-1">
                               {messageAttachments.map((attachment) => (
                                 <p key={attachment.id} className="text-xs">
-                                  <a
-                                    className="cyber-link"
-                                    href={attachment.storage_file_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    download={attachment.original_filename}
-                                  >
-                                    Download {attachment.original_filename}
-                                  </a>
+                    <a
+                      className="cyber-link"
+                      href={attachment.storage_file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      download={attachment.original_filename}
+                    >
+                      <Download size={12} className="mr-1 inline" />
+                      Download {attachment.original_filename}
+                    </a>
                                   <span className="cyber-muted"> · {formatAttachmentMeta(attachment)}</span>
                                 </p>
                               ))}
@@ -348,6 +367,7 @@ export default async function AdminUserDetailPage({ params }) {
                       rel="noreferrer"
                       download={attachment.original_filename}
                     >
+                      <Download size={12} className="mr-1 inline" />
                       Download attachment
                     </a>
                   </li>

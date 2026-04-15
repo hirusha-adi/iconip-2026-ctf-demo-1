@@ -2,6 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Image as ImageIcon,
+  Paperclip,
+  PenLine,
+  Plus,
+  Save,
+  SendHorizontal,
+  Square,
+  Video,
+  X,
+} from "lucide-react";
 import { toast } from "react-toastify";
 
 async function parseResponse(response) {
@@ -420,6 +431,7 @@ export default function ChatClient({
       <aside className="cyber-chat-sidebar flex h-full min-h-0 w-72 shrink-0 flex-col">
         <div className="cyber-chat-sidebar-header shrink-0 p-3">
           <button type="button" className="cyber-btn cyber-btn-solid w-full" onClick={createSession}>
+            <Plus size={16} />
             New chat
           </button>
         </div>
@@ -452,6 +464,7 @@ export default function ChatClient({
                           className="cyber-btn cyber-btn-solid !min-h-0 !px-2 !py-1 !text-[10px]"
                           disabled={savingTitle}
                         >
+                          <Save size={12} />
                           {savingTitle ? "Saving..." : "Save"}
                         </button>
                         <button
@@ -460,6 +473,7 @@ export default function ChatClient({
                           onClick={cancelEditingSession}
                           disabled={savingTitle}
                         >
+                          <X size={12} />
                           Cancel
                         </button>
                       </div>
@@ -487,7 +501,7 @@ export default function ChatClient({
                         aria-label="Edit session name"
                         title="Edit session name"
                       >
-                        ✎
+                        <PenLine size={12} />
                       </button>
                     </div>
                   )}
@@ -515,6 +529,7 @@ export default function ChatClient({
               onClick={endCurrentSession}
               disabled={!activeSession || activeSession.is_ended}
             >
+              <Square size={16} />
               End session
             </button>
           </div>
@@ -532,6 +547,7 @@ export default function ChatClient({
                   className="cyber-btn cyber-btn-solid"
                   onClick={createSession}
                 >
+                  <Plus size={16} />
                   Create new session
                 </button>
               </div>
@@ -646,9 +662,9 @@ export default function ChatClient({
                 {pendingAttachments.map((attachment) => (
                   <div key={attachment.id} className="cyber-note flex items-center gap-2 px-2 py-1.5 text-xs">
                     {attachment.kind === "video" ? (
-                      <VideoMiniIcon />
+                      <Video size={14} className="cyber-icon-video" />
                     ) : (
-                      <ImageMiniIcon />
+                      <ImageIcon size={14} className="cyber-icon-image" />
                     )}
                     <span className="max-w-[170px] truncate text-foreground">
                       {attachment.original_filename || "Attachment"}
@@ -664,7 +680,7 @@ export default function ChatClient({
                       title="Remove attachment"
                       disabled={sending}
                     >
-                      <CloseMiniIcon />
+                      <X size={12} />
                     </button>
                   </div>
                 ))}
@@ -693,7 +709,7 @@ export default function ChatClient({
                 {uploadingAttachments ? (
                   <span className="cyber-upload-spinner" />
                 ) : (
-                  <PaperclipIcon />
+                  <Paperclip size={15} />
                 )}
               </button>
 
@@ -720,6 +736,7 @@ export default function ChatClient({
                 className="cyber-btn cyber-btn-solid"
                 disabled={sendDisabled}
               >
+                <SendHorizontal size={16} />
                 {sending ? "Sending..." : "Send"}
               </button>
             </div>
@@ -727,83 +744,5 @@ export default function ChatClient({
         </form>
       </section>
     </div>
-  );
-}
-
-function PaperclipIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="m21.44 11.05-8.49 8.49a5 5 0 0 1-7.07-7.07l9.9-9.9a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.2a2 2 0 1 1-2.83-2.83l8.49-8.48" />
-    </svg>
-  );
-}
-
-function ImageMiniIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="cyber-icon-image"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <circle cx="9" cy="9" r="1.5" />
-      <path d="m21 15-4-4L5 21" />
-    </svg>
-  );
-}
-
-function VideoMiniIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="cyber-icon-video"
-    >
-      <rect x="2" y="6" width="15" height="12" rx="2" />
-      <path d="m17 10 5-3v10l-5-3z" />
-    </svg>
-  );
-}
-
-function CloseMiniIcon() {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
   );
 }
