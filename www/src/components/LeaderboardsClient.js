@@ -74,7 +74,10 @@ function buildPieSegments(leaderboard) {
   return { total, segments };
 }
 
-export default function LeaderboardsClient({ snapshot }) {
+export default function LeaderboardsClient({
+  snapshot,
+  isViewerLoggedIn = false,
+}) {
   const [view, setView] = useState("stats");
   const [hoveredSlice, setHoveredSlice] = useState(null);
   const topEntry = snapshot.leaderboard[0] ?? null;
@@ -89,6 +92,14 @@ export default function LeaderboardsClient({ snapshot }) {
   const pieHoverText = hoveredSlice
     ? `${hoveredSlice.label}: ${hoveredSlice.points.toLocaleString()} pts (${hoveredSlice.percent.toFixed(1)}%)`
     : "Hover a slice to see contributor details.";
+  const viewerRankValue = isViewerLoggedIn
+    ? viewerRank
+      ? `#${viewerRank}`
+      : "—"
+    : "N/A";
+  const viewerPointsValue = isViewerLoggedIn
+    ? viewerPoints.toLocaleString()
+    : "N/A";
 
   const pieOption = useMemo(
     () => ({
@@ -188,12 +199,12 @@ export default function LeaderboardsClient({ snapshot }) {
                 />
                 <Stat
                   label="Your rank"
-                  value={viewerRank ? `#${viewerRank}` : "—"}
+                  value={viewerRankValue}
                   icon={<Medal size={16} />}
                 />
                 <Stat
                   label="Your points"
-                  value={viewerPoints.toLocaleString()}
+                  value={viewerPointsValue}
                   icon={<Star size={16} />}
                 />
                 <Stat

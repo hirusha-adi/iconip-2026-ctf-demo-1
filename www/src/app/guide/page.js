@@ -1,6 +1,7 @@
 import AppHeader from "@/components/AppHeader";
 import MarkdownHtml from "@/components/MarkdownHtml";
-import { requirePageUser } from "@/lib/server/authz";
+import PublicHeader from "@/components/PublicHeader";
+import { getApiUserContext } from "@/lib/server/authz";
 
 const GUIDE_MARKDOWN = `
 # Welcome to the AI Misinformation Resilience Challenge
@@ -137,12 +138,16 @@ The learning is real.
 `;
 
 export default async function GuidePage() {
-  const { profile } = await requirePageUser();
+  const { userId, profile } = await getApiUserContext();
 
   return (
     <main className="flex flex-1">
       <div className="cyber-page-shell">
-        <AppHeader profile={profile} active="guide" title="Guide" />
+        {userId ? (
+          <AppHeader profile={profile} active="guide" title="Guide" />
+        ) : (
+          <PublicHeader active="guide" />
+        )}
 
         <section className="cyber-page-content !mt-16">
           <MarkdownHtml

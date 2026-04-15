@@ -11,6 +11,7 @@
   "dependencies": {
     "@clerk/nextjs": "^7.1.0",
     "@supabase/supabase-js": "^2.103.0",
+    "crisp-sdk-web": "^1.1.0",
     "daisyui": "^5.5.19",
     "echarts-for-react": "^3.0.6",
     "lucide-react": "^1.8.0",
