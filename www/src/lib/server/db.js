@@ -4,9 +4,27 @@ import { getSupabaseAdmin } from '@/lib/server/supabase-admin';
 
 const FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
 const ONLINE_WINDOW_MINUTES = 5;
+const ONE_HOUR_IN_MS = 60 * 60 * 1000;
+const ATTACHMENT_HOURLY_LIMIT = 3;
 
 function isNoRowsError(error) {
   return error?.code === 'PGRST116';
+}
+
+function toPublicAttachment(attachment) {
+  return {
+    id: attachment.id,
+    message_id: attachment.message_id,
+    session_id: attachment.session_id,
+    clerk_user_id: attachment.clerk_user_id,
+    kind: attachment.kind,
+    original_filename: attachment.original_filename,
+    mime_type: attachment.mime_type,
+    byte_size: attachment.byte_size,
+    duration_seconds: attachment.duration_seconds,
+    url: attachment.storage_file_url,
+    created_at: attachment.created_at,
+  };
 }
 
 export function normalizeEmail(email) {
@@ -364,6 +382,164 @@ export async function addChatMessage({ sessionId, clerkUserId, role, content }) 
   return data;
 }
 
+export async function getAttachmentUploadAllowance(clerkUserId) {
+  const supabase = getSupabaseAdmin();
+  const windowStart = new Date(Date.now() - ONE_HOUR_IN_MS).toISOString();
+
+  const { count, error } = await supabase
+    .from('chat_message_attachments')
+    .select('id', { count: 'exact', head: true })
+    .eq('clerk_user_id', clerkUserId)
+    .gte('created_at', windowStart);
+
+  if (error) {
+    throw error;
+  }
+
+  const used = count ?? 0;
+  const remaining = Math.max(0, ATTACHMENT_HOURLY_LIMIT - used);
+
+  return {
+    used,
+    remaining,
+    limit: ATTACHMENT_HOURLY_LIMIT,
+    allowed: remaining > 0,
+  };
+}
+
+export async function createChatAttachment({
+  sessionId,
+  clerkUserId,
+  kind,
+  originalFilename,
+  mimeType,
+  byteSize,
+  durationSeconds = null,
+  storageBucket,
+  storagePath,
+  storageFileUrl,
+  metadata = {},
+}) {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('chat_message_attachments')
+    .insert({
+      session_id: sessionId,
+      clerk_user_id: clerkUserId,
+      kind,
+      original_filename: originalFilename,
+      mime_type: mimeType,
+      byte_size: byteSize,
+      duration_seconds: durationSeconds,
+      storage_bucket: storageBucket,
+      storage_path: storagePath,
+      storage_file_url: storageFileUrl,
+      metadata,
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return toPublicAttachment(data);
+}
+
+export async function getPendingAttachmentForUser(attachmentId, clerkUserId) {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('chat_message_attachments')
+    .select('*')
+    .eq('id', attachmentId)
+    .eq('clerk_user_id', clerkUserId)
+    .is('deleted_at', null)
+    .is('message_id', null)
+    .maybeSingle();
+
+  if (error && !isNoRowsError(error)) {
+    throw error;
+  }
+
+  return data ?? null;
+}
+
+export async function getPendingAttachmentsByIds({ attachmentIds, sessionId, clerkUserId }) {
+  if (!Array.isArray(attachmentIds) || attachmentIds.length === 0) {
+    return [];
+  }
+
+  const supabase = getSupabaseAdmin();
+  const uniqueIds = [...new Set(attachmentIds)];
+
+  const { data, error } = await supabase
+    .from('chat_message_attachments')
+    .select('*')
+    .in('id', uniqueIds)
+    .eq('session_id', sessionId)
+    .eq('clerk_user_id', clerkUserId)
+    .is('deleted_at', null)
+    .is('message_id', null)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+export async function attachPendingFilesToMessage({ attachmentIds, messageId, sessionId, clerkUserId }) {
+  if (!Array.isArray(attachmentIds) || attachmentIds.length === 0) {
+    return [];
+  }
+
+  const supabase = getSupabaseAdmin();
+  const uniqueIds = [...new Set(attachmentIds)];
+
+  const { data, error } = await supabase
+    .from('chat_message_attachments')
+    .update({
+      message_id: messageId,
+    })
+    .in('id', uniqueIds)
+    .eq('session_id', sessionId)
+    .eq('clerk_user_id', clerkUserId)
+    .is('deleted_at', null)
+    .is('message_id', null)
+    .select('*');
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map(toPublicAttachment);
+}
+
+export async function softDeletePendingAttachment(attachmentId, clerkUserId) {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('chat_message_attachments')
+    .update({
+      deleted_at: new Date().toISOString(),
+    })
+    .eq('id', attachmentId)
+    .eq('clerk_user_id', clerkUserId)
+    .is('deleted_at', null)
+    .is('message_id', null)
+    .select('*')
+    .maybeSingle();
+
+  if (error && !isNoRowsError(error)) {
+    throw error;
+  }
+
+  return data ?? null;
+}
+
 export async function createChatSession(clerkUserId, title = 'New session') {
   const supabase = getSupabaseAdmin();
 
@@ -469,6 +645,40 @@ export async function updateChatSessionTitle(sessionId, clerkUserId, title) {
   return data ?? null;
 }
 
+async function hydrateMessagesWithAttachments(messages, clerkUserId) {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return [];
+  }
+
+  const messageIds = messages.map((message) => message.id);
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('chat_message_attachments')
+    .select('*')
+    .in('message_id', messageIds)
+    .eq('clerk_user_id', clerkUserId)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const attachmentsByMessageId = new Map();
+  for (const row of data ?? []) {
+    const key = row.message_id;
+    if (!attachmentsByMessageId.has(key)) {
+      attachmentsByMessageId.set(key, []);
+    }
+    attachmentsByMessageId.get(key).push(toPublicAttachment(row));
+  }
+
+  return messages.map((message) => ({
+    ...message,
+    attachments: attachmentsByMessageId.get(message.id) ?? [],
+  }));
+}
+
 export async function getChatMessages(sessionId, clerkUserId) {
   const session = await getChatSession(sessionId, clerkUserId);
   if (!session) {
@@ -488,36 +698,54 @@ export async function getChatMessages(sessionId, clerkUserId) {
     throw error;
   }
 
-  return data;
+  return hydrateMessagesWithAttachments(data ?? [], clerkUserId);
 }
 
-export async function appendChatExchange({ sessionId, clerkUserId, userMessage, assistantMessage }) {
+export async function appendChatExchange({ sessionId, clerkUserId, userMessage, assistantMessage, userAttachmentIds = [] }) {
   const supabase = getSupabaseAdmin();
 
-  const messagesPayload = [
-    {
+  const { data: userRecord, error: userError } = await supabase
+    .from('chat_messages')
+    .insert({
       session_id: sessionId,
       clerk_user_id: clerkUserId,
       role: 'user',
       content: userMessage,
-    },
-    {
+    })
+    .select('*')
+    .single();
+
+  if (userError) {
+    throw userError;
+  }
+
+  await attachPendingFilesToMessage({
+    attachmentIds: userAttachmentIds,
+    messageId: userRecord.id,
+    sessionId,
+    clerkUserId,
+  });
+
+  const { data: assistantRecord, error: assistantError } = await supabase
+    .from('chat_messages')
+    .insert({
       session_id: sessionId,
       clerk_user_id: clerkUserId,
       role: 'assistant',
       content: assistantMessage,
-    },
-  ];
+    })
+    .select('*')
+    .single();
 
-  const { data, error } = await supabase.from('chat_messages').insert(messagesPayload).select('*');
-
-  if (error) {
-    throw error;
+  if (assistantError) {
+    throw assistantError;
   }
 
   const session = await getChatSession(sessionId, clerkUserId);
   if (session && (!session.title || session.title === 'New session')) {
-    const title = userMessage.length > 40 ? `${userMessage.slice(0, 37)}...` : userMessage;
+    const trimmedUserMessage = String(userMessage || '').trim();
+    const titleSource = trimmedUserMessage || (userAttachmentIds.length ? 'Attachment' : 'New session');
+    const title = titleSource.length > 40 ? `${titleSource.slice(0, 37)}...` : titleSource;
 
     const { error: sessionError } = await supabase
       .from('chat_sessions')
@@ -534,7 +762,7 @@ export async function appendChatExchange({ sessionId, clerkUserId, userMessage, 
     }
   }
 
-  return data;
+  return hydrateMessagesWithAttachments([userRecord, assistantRecord], clerkUserId);
 }
 
 export async function getAdminUsers() {

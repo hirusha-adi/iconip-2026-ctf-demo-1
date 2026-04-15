@@ -84,6 +84,29 @@ create table if not exists public.chat_messages (
   deleted_at timestamptz
 );
 
+create table if not exists public.chat_message_attachments (
+  id uuid primary key default gen_random_uuid(),
+  message_id uuid references public.chat_messages(id),
+  session_id uuid not null references public.chat_sessions(id),
+  clerk_user_id text not null references public.profiles(clerk_user_id),
+  kind text not null check (kind in ('image', 'video')),
+  original_filename text not null,
+  mime_type text not null,
+  byte_size integer not null check (byte_size > 0),
+  duration_seconds numeric(8,3),
+  storage_bucket text not null,
+  storage_path text not null unique,
+  storage_file_url text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  deleted_at timestamptz,
+  check (
+    (kind = 'image' and byte_size <= 3145728 and duration_seconds is null)
+    or
+    (kind = 'video' and byte_size <= 8388608 and duration_seconds is not null and duration_seconds > 0 and duration_seconds <= 30)
+  )
+);
+
 create table if not exists public.auth_events (
   id bigserial primary key,
   clerk_user_id text references public.profiles(clerk_user_id),
@@ -119,6 +142,9 @@ create index if not exists idx_profiles_email on public.profiles (email);
 create index if not exists idx_profiles_last_seen on public.profiles (last_seen_at);
 create index if not exists idx_chat_sessions_user on public.chat_sessions (clerk_user_id, updated_at desc);
 create index if not exists idx_chat_messages_session on public.chat_messages (session_id, created_at);
+create index if not exists idx_chat_message_attachments_user_created on public.chat_message_attachments (clerk_user_id, created_at desc);
+create index if not exists idx_chat_message_attachments_session_created on public.chat_message_attachments (session_id, created_at);
+create index if not exists idx_chat_message_attachments_message_created on public.chat_message_attachments (message_id, created_at);
 create index if not exists idx_auth_events_user on public.auth_events (clerk_user_id, created_at desc);
 create index if not exists idx_route_logs_user on public.route_access_logs (clerk_user_id, created_at desc);
 create index if not exists idx_route_logs_status on public.route_access_logs (status, created_at desc);
@@ -148,9 +174,25 @@ alter table public.password_reset_tokens enable row level security;
 alter table public.password_reset_email_events enable row level security;
 alter table public.chat_sessions enable row level security;
 alter table public.chat_messages enable row level security;
+alter table public.chat_message_attachments enable row level security;
 alter table public.auth_events enable row level security;
 alter table public.route_access_logs enable row level security;
 alter table public.admin_audit_logs enable row level security;
+
+-- Attachment media storage bucket for chat uploads.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'chat-attachments',
+  'chat-attachments',
+  true,
+  8388608,
+  array['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'video/mp4']
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 -- Explicitly deny public role access; app server uses service role key.
 revoke all on public.profiles from anon, authenticated;
@@ -160,6 +202,7 @@ revoke all on public.password_reset_tokens from anon, authenticated;
 revoke all on public.password_reset_email_events from anon, authenticated;
 revoke all on public.chat_sessions from anon, authenticated;
 revoke all on public.chat_messages from anon, authenticated;
+revoke all on public.chat_message_attachments from anon, authenticated;
 revoke all on public.auth_events from anon, authenticated;
 revoke all on public.route_access_logs from anon, authenticated;
 revoke all on public.admin_audit_logs from anon, authenticated;

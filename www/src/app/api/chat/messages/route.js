@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import {
   appendChatExchange,
   getChatMessages,
+  getPendingAttachmentsByIds,
   getChatSession,
   getProfileByClerkId,
   touchLastSeen,
@@ -13,6 +14,42 @@ import { chatMessageSchema } from '@/lib/shared/validation';
 
 function isAccessDenied(profile) {
   return !profile || !profile.is_verified || profile.is_disabled;
+}
+
+function buildAttachmentContext(attachments) {
+  if (!Array.isArray(attachments) || attachments.length === 0) {
+    return '';
+  }
+
+  const lines = attachments.map((attachment, index) => {
+    if (attachment.kind === 'video') {
+      const duration = attachment.duration_seconds ? `${attachment.duration_seconds}s` : 'unknown duration';
+      return `${index + 1}. Video: ${attachment.original_filename} (${duration})`;
+    }
+
+    return `${index + 1}. Image: ${attachment.original_filename}`;
+  });
+
+  return `User attached files:\n${lines.join('\n')}`;
+}
+
+function toModelMessageContent(content, attachments = []) {
+  const trimmedContent = String(content || '').trim();
+  const attachmentContext = buildAttachmentContext(attachments);
+
+  if (trimmedContent && attachmentContext) {
+    return `${trimmedContent}\n\n${attachmentContext}`;
+  }
+
+  if (trimmedContent) {
+    return trimmedContent;
+  }
+
+  if (attachmentContext) {
+    return `${attachmentContext}\n\nNo text message was provided.`;
+  }
+
+  return 'No content.';
 }
 
 export async function POST(request) {
@@ -35,7 +72,7 @@ export async function POST(request) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Invalid payload' }, { status: 400 });
     }
 
-    const { sessionId, content } = parsed.data;
+    const { sessionId, content, attachmentIds } = parsed.data;
 
     const session = await getChatSession(sessionId, userId);
     if (!session) {
@@ -46,9 +83,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Session has already ended' }, { status: 400 });
     }
 
+    const pendingAttachments = await getPendingAttachmentsByIds({
+      attachmentIds,
+      sessionId,
+      clerkUserId: userId,
+    });
+
+    const uniqueAttachmentCount = new Set(attachmentIds || []).size;
+    if (pendingAttachments.length !== uniqueAttachmentCount) {
+      return NextResponse.json({ error: 'One or more attachments are invalid or no longer available' }, { status: 400 });
+    }
+
     const existingMessages = await getChatMessages(sessionId, userId);
     const assistantReply = await generateAssistantReply({
-      history: [...existingMessages, { role: 'user', content }],
+      history: [
+        ...existingMessages.map((message) => ({
+          role: message.role,
+          content: toModelMessageContent(message.content, message.attachments || []),
+        })),
+        {
+          role: 'user',
+          content: toModelMessageContent(content, pendingAttachments),
+        },
+      ],
     });
 
     const inserted = await appendChatExchange({
@@ -56,6 +113,7 @@ export async function POST(request) {
       clerkUserId: userId,
       userMessage: content,
       assistantMessage: assistantReply,
+      userAttachmentIds: attachmentIds,
     });
 
     await touchLastSeen(userId, false);

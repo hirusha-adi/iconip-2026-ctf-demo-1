@@ -37,10 +37,21 @@ export const resetPasswordSchema = z
     message: 'Passwords do not match',
   });
 
-export const chatMessageSchema = z.object({
-  sessionId: z.string().uuid('Invalid session id'),
-  content: z.string().trim().min(1, 'Message cannot be empty').max(4000, 'Message is too long'),
-});
+export const chatMessageSchema = z
+  .object({
+    sessionId: z.string().uuid('Invalid session id'),
+    content: z.string().max(4000, 'Message is too long').optional().default('').transform((value) => value.trim()),
+    attachmentIds: z.array(z.string().uuid('Invalid attachment id')).max(3, 'You can attach up to 3 files').optional().default([]),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.content && (!value.attachmentIds || value.attachmentIds.length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['content'],
+        message: 'Message cannot be empty',
+      });
+    }
+  });
 
 export const updateUserSchema = z.object({
   firstName: z.string().trim().min(1).max(80).optional(),

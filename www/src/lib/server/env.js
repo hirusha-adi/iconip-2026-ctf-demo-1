@@ -5,6 +5,7 @@ import { z } from 'zod';
 const serverSchema = z.object({
   SUPABASE_URL: z.string().url('SUPABASE_URL must be a valid URL'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+  SUPABASE_ATTACHMENTS_BUCKET: z.string().min(1).optional(),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
@@ -15,6 +16,7 @@ const serverSchema = z.object({
 export const env = serverSchema.parse({
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_ATTACHMENTS_BUCKET: process.env.SUPABASE_ATTACHMENTS_BUCKET,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
