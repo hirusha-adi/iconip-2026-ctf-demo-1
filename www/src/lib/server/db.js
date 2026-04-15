@@ -723,7 +723,11 @@ async function hydrateMessagesWithAttachments(messages, clerkUserId) {
   }
 
   const messageIds = messages.map((message) => message.id);
+  const assistantMessageIds = messages
+    .filter((message) => message.role === 'assistant')
+    .map((message) => message.id);
   const supabase = getSupabaseAdmin();
+
   const { data, error } = await supabase
     .from('chat_message_attachments')
     .select('*')
@@ -745,9 +749,70 @@ async function hydrateMessagesWithAttachments(messages, clerkUserId) {
     attachmentsByMessageId.get(key).push(toPublicAttachment(row));
   }
 
+  const scoreByAssistantMessageId = new Map();
+  if (assistantMessageIds.length) {
+    const { data: scoreRows, error: scoreError } = await supabase
+      .from('persuasion_attempts')
+      .select('assistant_message_id, model_rating, awarded_points, submission_hash, input_modality, is_relevant, is_duplicate, metadata, created_at')
+      .eq('clerk_user_id', clerkUserId)
+      .in('assistant_message_id', assistantMessageIds)
+      .order('created_at', { ascending: false });
+
+    if (scoreError) {
+      if (!isMissingChallengeSchemaError(scoreError)) {
+        throw scoreError;
+      }
+    } else {
+      for (const row of scoreRows ?? []) {
+        const messageId = row.assistant_message_id;
+        if (!messageId || scoreByAssistantMessageId.has(messageId)) {
+          continue;
+        }
+
+        const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {};
+        const scoreMissing = Boolean(metadata.score_missing);
+        scoreByAssistantMessageId.set(messageId, {
+          score: scoreMissing ? null : clampScore(row.model_rating),
+          missing: scoreMissing,
+          source: Boolean(metadata.score_fallback_applied) ? 'fallback' : 'model',
+          debug: {
+            raw_output: typeof metadata.ai_raw_output === 'string' ? metadata.ai_raw_output : '',
+            canonical_output: typeof metadata.ai_canonical_output === 'string' ? metadata.ai_canonical_output : '',
+            rating_line: typeof metadata.ai_rating_line === 'string' ? metadata.ai_rating_line : '',
+            had_explicit_rating: Boolean(metadata.ai_had_explicit_rating),
+            score_fallback_applied: Boolean(metadata.score_fallback_applied),
+            input_modality_hint: String(row.input_modality || 'none'),
+            relevant_by_keyword: Boolean(metadata.relevant_by_keyword),
+            submission_hash: String(row.submission_hash || ''),
+            awarded_points: clampScore(row.awarded_points),
+            model_rating: clampScore(row.model_rating),
+            is_relevant: Boolean(row.is_relevant),
+            is_duplicate: Boolean(row.is_duplicate),
+          },
+        });
+      }
+    }
+  }
+
   return messages.map((message) => ({
     ...message,
     attachments: attachmentsByMessageId.get(message.id) ?? [],
+    ai_score:
+      message.role === 'assistant'
+        ? (scoreByAssistantMessageId.get(message.id)?.score ?? null)
+        : null,
+    ai_score_missing:
+      message.role === 'assistant'
+        ? (scoreByAssistantMessageId.get(message.id)?.missing ?? !scoreByAssistantMessageId.has(message.id))
+        : false,
+    ai_score_source:
+      message.role === 'assistant'
+        ? (scoreByAssistantMessageId.get(message.id)?.source ?? null)
+        : null,
+    ai_debug:
+      message.role === 'assistant'
+        ? (scoreByAssistantMessageId.get(message.id)?.debug ?? null)
+        : null,
   }));
 }
 

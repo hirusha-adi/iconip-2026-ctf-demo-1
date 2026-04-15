@@ -5,8 +5,9 @@ import path from 'node:path';
 import OpenAI from 'openai';
 
 const OPENAI_MODEL = 'gpt-5-nano';
-const WRAPPED_RATING_REGEX = /<\{\[\{*\s*<<\[(10|[0-9])\/10\]>>\s*\}*\]\}>/g;
+const WRAPPED_RATING_REGEX = /<\s*\{\s*\[\s*\{*\s*<<\[(10|[0-9])\/10\]>>\s*\}*\s*\]\s*\}\s*>\s*/g;
 const INLINE_RATING_REGEX = /<<\[(10|[0-9])\/10\]>>/g;
+const EMPTY_WRAPPER_ARTIFACT_REGEX = /<\s*\{\s*\[\s*\{*\s*\}*\s*\]\s*\}\s*>\s*/g;
 
 let cachedMasterPrompt = null;
 let cachedClient = null;
@@ -58,6 +59,20 @@ function getOpenAIClient() {
   return cachedClient;
 }
 
+function normalizeAttemptRating(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(10, Math.round(numeric)));
+}
+
+function buildRatingLine(score) {
+  const safeScore = normalizeAttemptRating(score);
+  return `<{[{{<<[${safeScore}/10]>>}}]}>`;
+}
+
 export function createSessionGreeting(firstName) {
   const safeName = String(firstName || '').trim() || 'there';
   return `Hello ${safeName}, did you know that water is generally liquid at room temperature?`;
@@ -103,19 +118,21 @@ function splitAssistantReplyAndRating(rawText) {
   }
 
   let rating = null;
-  let assistantText = normalized.replace(WRAPPED_RATING_REGEX, (_full, score) => {
+  let workingText = normalized.replace(WRAPPED_RATING_REGEX, (_full, score) => {
     rating = Number.parseInt(score, 10);
     return '';
   });
 
-  if (!Number.isFinite(rating)) {
-    assistantText = assistantText.replace(INLINE_RATING_REGEX, (_full, score) => {
-      rating = Number.parseInt(score, 10);
-      return '';
-    });
-  }
+  // Also handle malformed wrappers by extracting/removing bare inline tokens.
+  workingText = workingText.replace(INLINE_RATING_REGEX, (_full, score) => {
+    rating = Number.parseInt(score, 10);
+    return '';
+  });
 
-  assistantText = assistantText
+  // Clean up leftover empty wrapper shells like "<{[{{}}]} >".
+  workingText = workingText.replace(EMPTY_WRAPPER_ARTIFACT_REGEX, '');
+
+  const assistantText = workingText
     .split('\n')
     .map((line) => line.trimEnd())
     .filter((line, index, lines) => {
@@ -132,6 +149,7 @@ function splitAssistantReplyAndRating(rawText) {
   return {
     assistantText: assistantText || 'I hear your argument and will consider it.',
     attemptRating: Number.isFinite(rating) ? rating : null,
+    hadExplicitRating: Number.isFinite(rating),
     rawText: normalized,
   };
 }
@@ -170,5 +188,17 @@ export async function generateAssistantReply({
     throw new Error('AI returned an empty response');
   }
 
-  return splitAssistantReplyAndRating(text);
+  const parsed = splitAssistantReplyAndRating(text);
+  const guaranteedRating = normalizeAttemptRating(parsed.attemptRating);
+  const ratingLine = buildRatingLine(guaranteedRating);
+  const canonicalFullOutput = parsed.assistantText
+    ? `${parsed.assistantText}\n${ratingLine}`
+    : ratingLine;
+
+  return {
+    ...parsed,
+    attemptRating: guaranteedRating,
+    ratingLine,
+    canonicalFullOutput,
+  };
 }

@@ -229,14 +229,27 @@ export async function POST(request) {
     });
 
     assistantReply = String(aiResult.assistantText || '').trim();
+    const hasExplicitModelRating = Boolean(aiResult.hadExplicitRating);
     modelRating = clampRating(aiResult.attemptRating);
     const awardedPoints = modelRating;
+    const aiDebug = {
+      raw_output: String(aiResult.rawText || ''),
+      canonical_output: String(aiResult.canonicalFullOutput || ''),
+      rating_line: String(aiResult.ratingLine || ''),
+      had_explicit_rating: hasExplicitModelRating,
+      score_fallback_applied: !hasExplicitModelRating,
+      input_modality_hint: inputModalityHint,
+      relevant_by_keyword: relevantAttempt,
+      submission_hash: submissionHash,
+      awarded_points: awardedPoints,
+      model_rating: modelRating,
+    };
 
     if (!assistantReply) {
       assistantReply = 'I could not evaluate that turn. Please try again with a clearer argument.';
     }
 
-    const inserted = await appendChatExchange({
+    let inserted = await appendChatExchange({
       sessionId,
       clerkUserId: userId,
       userMessage: content,
@@ -265,12 +278,32 @@ export async function POST(request) {
             attachment_count: pendingAttachments.length,
             used_model: true,
             relevant_by_keyword: relevantAttempt,
+            score_missing: false,
+            score_fallback_applied: !hasExplicitModelRating,
+            ai_had_explicit_rating: hasExplicitModelRating,
+            ai_raw_output: aiDebug.raw_output,
+            ai_canonical_output: aiDebug.canonical_output,
+            ai_rating_line: aiDebug.rating_line,
           },
         });
       }
     } catch (scoringError) {
       console.error('Failed to record persuasion score:', scoringError);
     }
+
+    inserted = inserted.map((message) => {
+      if (message.role !== 'assistant') {
+        return message;
+      }
+
+      return {
+        ...message,
+        ai_score: modelRating,
+        ai_score_missing: false,
+        ai_score_source: !hasExplicitModelRating ? 'fallback' : 'model',
+        ai_debug: aiDebug,
+      };
+    });
 
     await touchLastSeen(userId, false);
 
