@@ -9,13 +9,25 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.1.0",
+    "@supabase/supabase-js": "^2.103.0",
+    "crisp-sdk-web": "^1.1.0",
     "daisyui": "^5.5.19",
+    "echarts-for-react": "^3.0.6",
+    "lucide-react": "^1.8.0",
+    "marked": "^18.0.0",
     "next": "16.2.3",
+    "nodemailer": "^8.0.5",
+    "openai": "^6.34.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-toastify": "^11.0.5",
+    "resend": "^6.11.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/typography": "^0.5.19",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4.2.2"

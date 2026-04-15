@@ -1,0 +1,24 @@
+name: hirusha-iconip26-www-prod
+
+services:
+  hirusha-iconip26-web:
+    container_name: hirusha-iconip26-web-prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    image: hirusha-iconip26-www:prod
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    networks:
+      - intranet_1
+    restart: unless-stopped
+
+networks:
+  intranet_1:
+    external: true

@@ -1,0 +1,31 @@
+name: hirusha-iconip26-www-dev
+
+services:
+  hirusha-iconip26-web:
+    container_name: hirusha-iconip26-web-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    env_file:
+      - .env.local
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - hirusha-iconip26-node-modules:/app/node_modules
+      - hirusha-iconip26-next-cache:/app/.next
+    networks:
+      - intranet_1
+    command: npm run dev -- --hostname 0.0.0.0 --port 3000
+    restart: unless-stopped
+
+volumes:
+  hirusha-iconip26-node-modules:
+    name: hirusha-iconip26-node-modules
+  hirusha-iconip26-next-cache:
+    name: hirusha-iconip26-next-cache
+
+networks:
+  intranet_1:
+    external: true

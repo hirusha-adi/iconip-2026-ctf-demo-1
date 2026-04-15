@@ -1,65 +1,69 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
+import { ExternalLink, LogIn, UserPlus } from 'lucide-react';
 
-export default function Home() {
+import PublicHeader from '@/components/PublicHeader';
+
+export default async function HomePage() {
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect('/chat');
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="flex flex-1">
+      <div className="cyber-page-shell">
+        <PublicHeader active="home" />
+
+        <div className="cyber-page-content">
+        <section className="cyber-card cyber-terminal p-8 sm:p-10">
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+            <div>
+              <p className="cyber-kicker">Conference Portal</p>
+              <h1 className="cyber-title cyber-title-glitch mt-3 text-4xl font-black leading-tight sm:text-6xl">
+                ICONIP 2026
+              </h1>
+              <p className="cyber-muted cyber-blink mt-4 max-w-3xl text-sm leading-7 sm:text-base">
+                ICONIP 2026 is an international conference focused on neural information processing, machine learning,
+                and intelligent systems. It brings together researchers, engineers, and students to share new methods,
+                applied research, and practical advances across AI, data science, and computational neuroscience.
+              </p>
+              <a
+                className="cyber-link mt-5 inline-block text-sm"
+                href="https://www.iconip2026.org/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <ExternalLink size={14} className="mr-1 inline" />
+                Visit the official ICONIP 2026 website
+              </a>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link className="cyber-btn cyber-btn-solid" href="/login">
+                  <LogIn size={16} />
+                  Login
+                </Link>
+                <Link className="cyber-btn cyber-btn-secondary" href="/register">
+                  <UserPlus size={16} />
+                  Register
+                </Link>
+              </div>
+            </div>
+
+            <div className="mx-auto w-full max-w-md lg:max-w-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://www.iconip2026.org/assets/images/ICONIP2026_Menu.svg"
+                alt="ICONIP 2026 official logo"
+                className="h-auto w-full object-contain drop-shadow-[0_16px_28px_rgba(21,40,82,0.16)]"
+              />
+            </div>
+          </div>
+        </section>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

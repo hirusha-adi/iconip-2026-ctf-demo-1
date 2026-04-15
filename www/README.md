@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# ICONIP 2026 CTF Demo (`www`)
 
-## Getting Started
+This is a Next.js 16 (App Router) project with:
 
-First, run the development server:
+- Authentication: Clerk
+- Data + logs: Supabase
+- Verification email delivery: Nodemailer (SMTP)
+- UI: TailwindCSS + DaisyUI + react-toastify
+
+## Implemented routes
+
+- `/` home with title and redirect to `/chat` when logged in
+- `/login` email/password login with verified-only check and verification email retry flow
+- `/register` first/last/email/password/password-confirm and "Check your inbox" state
+- `/logout` protected signout
+- `/chat` protected chat with sessions, switching, ending sessions, and persisted messages
+- `/user` authenticated self-service account page (name/password)
+- `/admin/*` protected admin routes (requires `is_admin`)
+- `/admin/users` -> `/admin/users/all`
+- `/admin/users/all` user table + stats
+- `/admin/users/[userId]` user details, chat history, auth/route logs, and admin controls
+- `/404` custom not-found page
+- invalid routes are redirected to `/404` via `src/proxy.js`
+
+## Setup
+
+1. Install dependencies (you said you'll run this manually):
+
+```bash
+npm install
+npm install @clerk/nextjs @supabase/supabase-js react-toastify nodemailer zod
+```
+
+2. Create `.env.local` from `.env.example` and fill values.
+
+3. Run SQL schema in Supabase:
+
+- Open Supabase SQL Editor
+- Run [`supabase/schema.sql`](./supabase/schema.sql)
+
+4. Start dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Notes
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Server-only backend logic is in `src/lib/server/*` and is not shipped to the client.
+- Verification resend is rate-limited to one request per 5 minutes per email.
+- Login supports email-code second-factor handling (`email_code`) from Clerk.
+- No hard-delete path is implemented; records use soft-delete columns where relevant.

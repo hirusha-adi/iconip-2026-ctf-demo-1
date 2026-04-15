@@ -2,7 +2,7 @@ This project uses NextJS as it's web framework. It uses javascript and NOT types
 - Frontend: TailwindCSS, DaisyUI, react-toastify
 - Backend: Supabase
 - Authentication: Clerk
-- Emails: Resend
+- Emails: Nodemailer (SMTP)
 
 These are the pages it should have:
 - `/` 
