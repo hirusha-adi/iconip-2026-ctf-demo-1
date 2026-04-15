@@ -1,24 +1,73 @@
 import "server-only";
 
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 import { APP_BASE_URL, env } from "@/lib/server/env";
 
-let resend;
+let transporter;
 
-function getResend() {
-  if (!resend) {
-    resend = new Resend(env.RESEND_API_KEY);
+function getTransporter() {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_SECURE,
+      auth: {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASS,
+      },
+    });
   }
 
-  return resend;
+  return transporter;
+}
+
+function getFromAddress() {
+  if (!env.SMTP_FROM_NAME) {
+    return env.SMTP_FROM_EMAIL;
+  }
+
+  const safeName = env.SMTP_FROM_NAME.replaceAll('"', '\\"');
+  return `"${safeName}" <${env.SMTP_FROM_EMAIL}>`;
+}
+
+async function sendEmail(payload) {
+  console.log("[email] sending", {
+    to: payload.to,
+    from: payload.from,
+    subject: payload.subject,
+  });
+
+  try {
+    const result = await getTransporter().sendMail(payload);
+
+    console.log("[email] sent", {
+      to: payload.to,
+      subject: payload.subject,
+      messageId: result?.messageId ?? null,
+      accepted: result?.accepted ?? [],
+      rejected: result?.rejected ?? [],
+      response: result?.response ?? null,
+    });
+
+    if (Array.isArray(result?.accepted) && result.accepted.length === 0) {
+      throw new Error("SMTP server rejected the recipient");
+    }
+  } catch (error) {
+    console.error("[email] failed", {
+      to: payload.to,
+      subject: payload.subject,
+      error: error?.message || error,
+    });
+    throw error;
+  }
 }
 
 export async function sendVerificationEmail({ email, token }) {
   const verifyUrl = `${APP_BASE_URL}/api/auth/verify-email?token=${token}`;
 
   const payload = {
-    from: env.RESEND_FROM_EMAIL,
+    from: getFromAddress(),
     to: email,
     subject: "Verify your ICONIP 2026 CTF account",
     html: `
@@ -32,43 +81,14 @@ export async function sendVerificationEmail({ email, token }) {
     text: `Verify your account by visiting: ${verifyUrl}`,
   };
 
-  console.log("[email] sending", {
-    to: payload.to,
-    from: payload.from,
-    subject: payload.subject,
-    verifyUrl: verifyUrl,
-  });
-
-  try {
-    const result = await getResend().emails.send(payload);
-
-    console.log("[email] sent", {
-      to: payload.to,
-      subject: payload.subject,
-      id: result?.data?.id ?? null,
-      error: result?.error ?? null,
-    });
-
-    if (result?.error) {
-      throw new Error(
-        result.error.message || "Email provider returned an error",
-      );
-    }
-  } catch (error) {
-    console.error("[email] failed", {
-      to: payload.to,
-      subject: payload.subject,
-      error: error?.message || error,
-    });
-    throw error;
-  }
+  await sendEmail(payload);
 }
 
 export async function sendPasswordResetEmail({ email, token }) {
   const resetUrl = `${APP_BASE_URL}/reset-password?token=${token}`;
 
   const payload = {
-    from: env.RESEND_FROM_EMAIL,
+    from: getFromAddress(),
     to: email,
     subject: "Reset your ICONIP 2026 CTF password",
     html: `
@@ -82,34 +102,5 @@ export async function sendPasswordResetEmail({ email, token }) {
     text: `Reset your password by visiting: ${resetUrl}`,
   };
 
-  console.log("[email] sending", {
-    to: payload.to,
-    from: payload.from,
-    subject: payload.subject,
-    verifyUrl: resetUrl,
-  });
-
-  try {
-    const result = await getResend().emails.send(payload);
-
-    console.log("[email] sent", {
-      to: payload.to,
-      subject: payload.subject,
-      id: result?.data?.id ?? null,
-      error: result?.error ?? null,
-    });
-
-    if (result?.error) {
-      throw new Error(
-        result.error.message || "Email provider returned an error",
-      );
-    }
-  } catch (error) {
-    console.error("[email] failed", {
-      to: payload.to,
-      subject: payload.subject,
-      error: error?.message || error,
-    });
-    throw error;
-  }
+  await sendEmail(payload);
 }

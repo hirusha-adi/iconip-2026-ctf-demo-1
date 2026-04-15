@@ -4,13 +4,13 @@ This is a Next.js 16 (App Router) project with:
 
 - Authentication: Clerk
 - Data + logs: Supabase
-- Verification email delivery: Resend
+- Verification email delivery: Nodemailer (SMTP)
 - UI: TailwindCSS + DaisyUI + react-toastify
 
 ## Implemented routes
 
 - `/` home with title and redirect to `/chat` when logged in
-- `/login` email/password login with verified-only check and resend verification flow
+- `/login` email/password login with verified-only check and verification email retry flow
 - `/register` first/last/email/password/password-confirm and "Check your inbox" state
 - `/logout` protected signout
 - `/chat` protected chat with sessions, switching, ending sessions, and persisted messages
@@ -28,7 +28,7 @@ This is a Next.js 16 (App Router) project with:
 
 ```bash
 npm install
-npm install @clerk/nextjs @supabase/supabase-js react-toastify resend zod
+npm install @clerk/nextjs @supabase/supabase-js react-toastify nodemailer zod
 ```
 
 2. Create `.env.local` from `.env.example` and fill values.
