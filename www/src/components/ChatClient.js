@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
@@ -35,8 +34,6 @@ export default function ChatClient({
   initialSessionId,
   initialMessages,
   hasInvalidRequestedSession = false,
-  userName = "User",
-  isAdmin = false,
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -422,46 +419,7 @@ export default function ChatClient({
     <div className="cyber-card flex h-full min-h-0 overflow-hidden">
       <aside className="cyber-chat-sidebar flex h-full min-h-0 w-72 shrink-0 flex-col">
         <div className="cyber-chat-sidebar-header shrink-0 p-3">
-          <p className="cyber-kicker">Chat Workspace</p>
-          <div className="mt-1 flex items-center justify-between gap-2">
-            <p className="cyber-title truncate text-sm font-semibold text-foreground">
-              Welcome back {userName}
-            </p>
-            <div className="flex items-center gap-1">
-              {isAdmin ? (
-                <Link
-                  className="cyber-btn cyber-btn-admin !h-8 !min-h-0 !w-8 !p-0"
-                  href="/admin/users/"
-                  aria-label="Admin"
-                  title="Admin"
-                >
-                  <AdminIcon />
-                </Link>
-              ) : null}
-              <Link
-                className="cyber-btn cyber-btn-user !h-8 !min-h-0 !w-8 !p-0"
-                href="/user"
-                aria-label="User settings"
-                title="User settings"
-              >
-                <UserIcon />
-              </Link>
-              <Link
-                className="cyber-btn cyber-btn-danger !h-8 !min-h-0 !w-8 !p-0"
-                href="/logout"
-                aria-label="Logout"
-                title="Logout"
-              >
-                <LogoutIcon />
-              </Link>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="cyber-btn cyber-btn-solid mt-3 w-full"
-            onClick={createSession}
-          >
+          <button type="button" className="cyber-btn cyber-btn-solid w-full" onClick={createSession}>
             New chat
           </button>
         </div>
@@ -769,64 +727,6 @@ export default function ChatClient({
         </form>
       </section>
     </div>
-  );
-}
-
-function UserIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M19 21a7 7 0 0 0-14 0" />
-      <circle cx="12" cy="8" r="4" />
-    </svg>
-  );
-}
-
-function LogoutIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <path d="m16 17 5-5-5-5" />
-      <path d="M21 12H9" />
-    </svg>
-  );
-}
-
-function AdminIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 3 5 6v6c0 5 3.5 8 7 9 3.5-1 7-4 7-9V6l-7-3Z" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
   );
 }
 
