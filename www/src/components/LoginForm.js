@@ -9,7 +9,6 @@ import { toast } from 'react-toastify';
 const SECOND_FACTOR_METHOD = {
   TOTP: 'totp',
   BACKUP_CODE: 'backup_code',
-  PHONE_CODE: 'phone_code',
   EMAIL_CODE: 'email_code',
 };
 
@@ -38,7 +37,6 @@ function buildSecondFactorAvailability(factors) {
   return {
     [SECOND_FACTOR_METHOD.TOTP]: strategies.includes(SECOND_FACTOR_METHOD.TOTP),
     [SECOND_FACTOR_METHOD.BACKUP_CODE]: strategies.includes(SECOND_FACTOR_METHOD.BACKUP_CODE),
-    [SECOND_FACTOR_METHOD.PHONE_CODE]: strategies.includes(SECOND_FACTOR_METHOD.PHONE_CODE),
     [SECOND_FACTOR_METHOD.EMAIL_CODE]: strategies.includes(SECOND_FACTOR_METHOD.EMAIL_CODE),
   };
 }
@@ -46,10 +44,6 @@ function buildSecondFactorAvailability(factors) {
 function getDefaultSecondFactorMethod(availability) {
   if (availability[SECOND_FACTOR_METHOD.TOTP]) {
     return SECOND_FACTOR_METHOD.TOTP;
-  }
-
-  if (availability[SECOND_FACTOR_METHOD.PHONE_CODE]) {
-    return SECOND_FACTOR_METHOD.PHONE_CODE;
   }
 
   if (availability[SECOND_FACTOR_METHOD.EMAIL_CODE]) {
@@ -70,10 +64,6 @@ function getSecondFactorPrompt(method) {
 
   if (method === SECOND_FACTOR_METHOD.TOTP) {
     return 'Enter the code from your authenticator application.';
-  }
-
-  if (method === SECOND_FACTOR_METHOD.PHONE_CODE) {
-    return 'Enter the verification code sent to your phone.';
   }
 
   if (method === SECOND_FACTOR_METHOD.EMAIL_CODE) {
@@ -98,7 +88,6 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
   const [availableSecondFactors, setAvailableSecondFactors] = useState({
     [SECOND_FACTOR_METHOD.TOTP]: false,
     [SECOND_FACTOR_METHOD.BACKUP_CODE]: false,
-    [SECOND_FACTOR_METHOD.PHONE_CODE]: false,
     [SECOND_FACTOR_METHOD.EMAIL_CODE]: false,
   });
   const [secondFactorMethod, setSecondFactorMethod] = useState(SECOND_FACTOR_METHOD.TOTP);
@@ -184,16 +173,6 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
       return;
     }
 
-    if (method === SECOND_FACTOR_METHOD.PHONE_CODE) {
-      const response = await signIn.mfa.sendPhoneCode();
-      if (response.error) {
-        throw new Error(getErrorMessage(response.error, 'Failed to send phone code'));
-      }
-
-      setSecondFactorInfo('We sent a verification code to your phone.');
-      return;
-    }
-
     setSecondFactorInfo(getSecondFactorPrompt(method));
   }
 
@@ -230,10 +209,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
 
     try {
       await sendSecondFactorChallenge(nextMethod);
-      if (
-        nextMethod === SECOND_FACTOR_METHOD.EMAIL_CODE ||
-        nextMethod === SECOND_FACTOR_METHOD.PHONE_CODE
-      ) {
+      if (nextMethod === SECOND_FACTOR_METHOD.EMAIL_CODE) {
         toast.success('Verification code sent');
       }
     } catch (methodError) {
@@ -316,8 +292,6 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
         response = await signIn.mfa.verifyBackupCode({ code });
       } else if (secondFactorMethod === SECOND_FACTOR_METHOD.TOTP) {
         response = await signIn.mfa.verifyTOTP({ code });
-      } else if (secondFactorMethod === SECOND_FACTOR_METHOD.PHONE_CODE) {
-        response = await signIn.mfa.verifyPhoneCode({ code });
       } else if (secondFactorMethod === SECOND_FACTOR_METHOD.EMAIL_CODE) {
         response = await signIn.mfa.verifyEmailCode({ code });
       }
@@ -349,7 +323,6 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
     setAvailableSecondFactors({
       [SECOND_FACTOR_METHOD.TOTP]: false,
       [SECOND_FACTOR_METHOD.BACKUP_CODE]: false,
-      [SECOND_FACTOR_METHOD.PHONE_CODE]: false,
       [SECOND_FACTOR_METHOD.EMAIL_CODE]: false,
     });
     setSecondFactorMethod(SECOND_FACTOR_METHOD.TOTP);
@@ -413,7 +386,8 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
           <p className="cyber-note cyber-note-info">Second-factor verification is required.</p>
           {secondFactorInfo ? <p className="cyber-muted text-xs">{secondFactorInfo}</p> : null}
           <p className="cyber-muted text-xs">
-            If you can&apos;t access your authenticator app, switch to <strong>Backup code</strong>.
+            Default is <strong>Authenticator app</strong>. If needed, switch to <strong>Email code</strong> or
+            <strong> Backup code</strong>.
           </p>
 
           <div className="flex flex-wrap gap-2">
@@ -447,15 +421,6 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
               </button>
             ) : null}
 
-            {availableSecondFactors[SECOND_FACTOR_METHOD.PHONE_CODE] ? (
-              <button
-                type="button"
-                className={`cyber-btn ${secondFactorMethod === SECOND_FACTOR_METHOD.PHONE_CODE ? 'cyber-btn-solid' : 'cyber-btn-outline'}`}
-                onClick={() => handleSecondFactorMethodChange(SECOND_FACTOR_METHOD.PHONE_CODE)}
-              >
-                Phone code
-              </button>
-            ) : null}
           </div>
 
           <label className="cyber-label" htmlFor="secondFactorCode">
