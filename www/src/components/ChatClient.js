@@ -420,8 +420,8 @@ export default function ChatClient({
 
   return (
     <div className="cyber-card flex h-full min-h-0 overflow-hidden">
-      <aside className="flex h-full min-h-0 w-72 shrink-0 flex-col border-r border-[#2a2a3a] bg-[#101018]">
-        <div className="shrink-0 border-b border-[#2a2a3a] p-3">
+      <aside className="cyber-chat-sidebar flex h-full min-h-0 w-72 shrink-0 flex-col">
+        <div className="cyber-chat-sidebar-header shrink-0 p-3">
           <p className="cyber-kicker">ICONIP CTF</p>
           <div className="mt-1 flex items-center justify-between gap-2">
             <p className="cyber-title truncate text-sm font-semibold text-foreground">
@@ -475,10 +475,7 @@ export default function ChatClient({
               return (
                 <li key={session.id}>
                   {isEditing ? (
-                    <form
-                      className="cyber-note space-y-2 bg-[#141425]"
-                      onSubmit={(event) => saveSessionTitle(event, session.id)}
-                    >
+                    <form className="cyber-note space-y-2" onSubmit={(event) => saveSessionTitle(event, session.id)}>
                       <div className="cyber-input-wrap">
                         <input
                           type="text"
@@ -511,11 +508,7 @@ export default function ChatClient({
                     </form>
                   ) : (
                     <div
-                      className={`flex items-start gap-2 px-2 py-2 ${
-                        active
-                          ? "cyber-note border-[#00ff88] bg-[rgba(0,255,136,0.16)] text-foreground shadow-[var(--box-shadow-neon-sm)]"
-                          : "cyber-note border-[#2a2a3a] bg-[#12121a] text-foreground hover:border-[#00d4ff]"
-                      }`}
+                      className={`flex items-start gap-2 px-2 py-2 ${active ? "cyber-session-item cyber-session-item-active" : "cyber-session-item"}`}
                     >
                       <button
                         type="button"
@@ -525,21 +518,13 @@ export default function ChatClient({
                         <span className="block truncate text-sm font-medium">
                           {session.title || "New session"}
                         </span>
-                        <span
-                          className={`block text-xs ${
-                            active ? "text-[#b5ffe1]" : "text-[#8f99b3]"
-                          }`}
-                        >
+                        <span className={`block text-xs ${active ? "cyber-session-status-active" : "cyber-session-status"}`}>
                           {session.is_ended ? "Ended" : "Active"}
                         </span>
                       </button>
                       <button
                         type="button"
-                        className={`rounded p-1 text-xs ${
-                          active
-                            ? "text-[#00ff88] hover:bg-[rgba(0,255,136,0.14)]"
-                            : "text-[#00d4ff] hover:bg-[rgba(0,212,255,0.12)]"
-                        }`}
+                        className={`cyber-session-edit p-1 text-xs ${active ? "cyber-session-status-active" : "cyber-session-status"}`}
                         onClick={() => startEditingSession(session)}
                         aria-label="Edit session name"
                         title="Edit session name"
@@ -555,8 +540,8 @@ export default function ChatClient({
         </div>
       </aside>
 
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#0d0d14]">
-        <header className="shrink-0 border-b border-[#2a2a3a] px-4 py-3">
+      <section className="cyber-chat-main flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="cyber-chat-main-header shrink-0 px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h1 className="cyber-title truncate text-base font-semibold text-foreground">
@@ -626,20 +611,11 @@ export default function ChatClient({
                       key={message.id}
                       className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                     >
-                      <div
-                        className={`max-w-[85%] px-4 py-2.5 text-sm leading-relaxed ${
-                          isUser
-                            ? "cyber-note border-[#4dffbe] bg-[rgba(0,255,136,0.32)] text-[#f4fff9] shadow-[var(--box-shadow-neon-sm)]"
-                            : "cyber-note border-[#2a2a3a] bg-[#151525] text-foreground"
-                        }`}
-                      >
+                      <div className={`max-w-[85%] px-4 py-2.5 text-sm leading-relaxed ${isUser ? "cyber-note cyber-message-user" : "cyber-note cyber-message-assistant"}`}>
                         {messageAttachments.length > 0 ? (
                           <div className="mb-2 grid gap-2">
                             {messageAttachments.map((attachment) => (
-                              <div
-                                key={attachment.id}
-                                className="overflow-hidden rounded border border-[#2a2a3a] bg-[#0f1018]"
-                              >
+                              <div key={attachment.id} className="cyber-attachment-card">
                                 {attachment.kind === "image" ? (
                                   <a
                                     href={attachment.url}
@@ -659,14 +635,9 @@ export default function ChatClient({
                                     />
                                   </a>
                                 ) : (
-                                  <video
-                                    src={attachment.url}
-                                    controls
-                                    preload="metadata"
-                                    className="max-h-72 w-full bg-black object-contain"
-                                  />
+                                  <video src={attachment.url} controls preload="metadata" className="max-h-72 w-full object-contain" />
                                 )}
-                                <div className="flex items-center justify-between gap-2 px-2 py-1 text-[11px] text-[#a3acc2]">
+                                <div className="cyber-attachment-meta flex items-center justify-between gap-2 px-2 py-1 text-[11px]">
                                   <span className="truncate">
                                     {attachment.original_filename ||
                                       "Attachment"}
@@ -688,15 +659,15 @@ export default function ChatClient({
 
                 {sending ? (
                   <div className="flex justify-start">
-                    <div className="cyber-note border-[#2a2a3a] bg-[#151525] text-foreground">
+                    <div className="cyber-note cyber-message-assistant">
                       <div className="flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00d4ff]" />
+                        <span className="cyber-typing-dot" />
                         <span
-                          className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00d4ff]"
+                          className="cyber-typing-dot"
                           style={{ animationDelay: "120ms" }}
                         />
                         <span
-                          className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00d4ff]"
+                          className="cyber-typing-dot"
                           style={{ animationDelay: "240ms" }}
                         />
                       </div>
@@ -710,32 +681,26 @@ export default function ChatClient({
           </div>
         </div>
 
-        <form
-          className="shrink-0 border-t border-[#2a2a3a] bg-[#11111b]"
-          onSubmit={handleSend}
-        >
+        <form className="cyber-chat-composer shrink-0" onSubmit={handleSend}>
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 px-4 py-3">
             {pendingAttachments.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {pendingAttachments.map((attachment) => (
-                  <div
-                    key={attachment.id}
-                    className="cyber-note flex items-center gap-2 border-[#2a2a3a] bg-[#131422] px-2 py-1.5 text-xs"
-                  >
+                  <div key={attachment.id} className="cyber-note flex items-center gap-2 px-2 py-1.5 text-xs">
                     {attachment.kind === "video" ? (
                       <VideoMiniIcon />
                     ) : (
                       <ImageMiniIcon />
                     )}
-                    <span className="max-w-[170px] truncate text-[#d9dfef]">
+                    <span className="max-w-[170px] truncate text-foreground">
                       {attachment.original_filename || "Attachment"}
                     </span>
-                    <span className="text-[11px] text-[#8f99b3]">
+                    <span className="cyber-muted text-[11px]">
                       {formatBytes(attachment.byte_size)}
                     </span>
                     <button
                       type="button"
-                      className="rounded p-0.5 text-[#8f99b3] hover:bg-[rgba(255,51,102,0.16)] hover:text-[#ff8fab]"
+                      className="cyber-remove-btn p-0.5"
                       onClick={() => removePendingAttachment(attachment.id)}
                       aria-label="Remove attachment"
                       title="Remove attachment"
@@ -768,7 +733,7 @@ export default function ChatClient({
                 title="Add attachment"
               >
                 {uploadingAttachments ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#00d4ff] border-t-transparent" />
+                  <span className="cyber-upload-spinner" />
                 ) : (
                   <PaperclipIcon />
                 )}
@@ -777,7 +742,7 @@ export default function ChatClient({
               <div className="cyber-input-wrap flex-1">
                 <textarea
                   ref={composerTextareaRef}
-                  className="cyber-input cyber-scroll max-h-32 min-h-[44px] resize-none overflow-y-auto py-2.5 leading-6"
+                  className="cyber-textarea cyber-scroll max-h-32 min-h-[44px] resize-none overflow-y-auto py-2.5 leading-6"
                   placeholder="Message..."
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
@@ -895,7 +860,7 @@ function ImageMiniIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className="text-[#00d4ff]"
+      className="cyber-icon-image"
     >
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <circle cx="9" cy="9" r="1.5" />
@@ -916,7 +881,7 @@ function VideoMiniIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className="text-[#ff79c6]"
+      className="cyber-icon-video"
     >
       <rect x="2" y="6" width="15" height="12" rx="2" />
       <path d="m17 10 5-3v10l-5-3z" />

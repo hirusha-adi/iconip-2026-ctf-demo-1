@@ -285,7 +285,7 @@ export default async function AdminUserDetailPage({ params }) {
 function Card({ title, children }) {
   return (
     <article className="cyber-card p-4">
-      <h3 className="cyber-title mb-3 text-sm font-semibold text-[#00d4ff]">{title}</h3>
+      <h3 className="cyber-title cyber-accent-text mb-3 text-sm font-semibold">{title}</h3>
       {children}
     </article>
   );
@@ -300,7 +300,7 @@ function EventList({ items, emptyText }) {
     <ul className="space-y-2">
       {items.map((item) => (
         <li key={item.id} className="cyber-note p-2 text-xs text-foreground">
-          <p className="font-semibold text-[#00d4ff]">{item.event_type || item.action || item.status || 'event'}</p>
+          <p className="cyber-accent-text font-semibold">{item.event_type || item.action || item.status || 'event'}</p>
           <p>{item.path || item.email || '-'}</p>
           <p>{new Date(item.created_at).toLocaleString()}</p>
         </li>

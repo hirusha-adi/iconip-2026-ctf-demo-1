@@ -13,7 +13,7 @@ export default async function UserPage() {
           <Link className="cyber-btn cyber-btn-chat" href="/chat">
             Chat
           </Link>
-          <Link className="cyber-btn cyber-btn-ghost" href="/logout">
+          <Link className="cyber-btn cyber-btn-danger" href="/logout">
             Logout
           </Link>
         </header>
