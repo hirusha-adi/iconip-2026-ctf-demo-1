@@ -8,6 +8,7 @@ export const VALID_STATIC_ROUTES = new Set([
   '/setup-mfa',
   '/user',
   '/chat',
+  '/leaderboards',
   '/admin',
   '/admin/users',
   '/admin/users/all',
