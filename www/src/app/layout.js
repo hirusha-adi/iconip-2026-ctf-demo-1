@@ -1,5 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 
+import CrispChat from "@/components/CrispChat";
 import ToastProvider from "@/components/ToastProvider";
 import "./globals.css";
 
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ClerkProvider taskUrls={{ 'setup-mfa': '/setup-mfa' }}>
           {children}
+          <CrispChat />
           <ToastProvider />
         </ClerkProvider>
       </body>
