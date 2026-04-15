@@ -27,7 +27,7 @@ export async function GET(request) {
       eventType: 'verify_email_success',
     });
 
-    return NextResponse.redirect(new URL('/login?verified=success', request.url));
+    return NextResponse.redirect(new URL('/login?verified=success&next=/setup-mfa', request.url));
   } catch (error) {
     console.error('Email verification failed:', error);
     return NextResponse.redirect(new URL('/login?verified=error', request.url));

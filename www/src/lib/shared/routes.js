@@ -5,6 +5,7 @@ export const VALID_STATIC_ROUTES = new Set([
   '/reset-password',
   '/register',
   '/logout',
+  '/setup-mfa',
   '/user',
   '/chat',
   '/admin',

@@ -209,10 +209,13 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
       </section>
 
       <section className="cyber-card p-6">
-        <h2 className="cyber-title text-lg font-semibold text-foreground">Email MFA</h2>
+        <h2 className="cyber-title text-lg font-semibold text-foreground">Multi-factor authentication</h2>
         <p className="cyber-muted mt-1 text-sm">
-          Login requires email verification code as second factor based on your Clerk instance settings.
+          This account uses authenticator application and backup codes for second-factor verification.
         </p>
+        <Link className="cyber-link mt-3 inline-block text-sm" href="/setup-mfa">
+          Continue MFA setup task
+        </Link>
       </section>
     </div>
   );

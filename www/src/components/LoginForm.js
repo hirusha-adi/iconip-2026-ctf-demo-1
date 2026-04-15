@@ -6,15 +6,12 @@ import { useMemo, useState } from 'react';
 import { useSignIn } from '@clerk/nextjs';
 import { toast } from 'react-toastify';
 
-const MFA_EMAIL_CODE = 'email_code';
-
-function isClerkTestEmail(value) {
-  if (!value) {
-    return false;
-  }
-
-  return value.toLowerCase().includes('+clerk_test@');
-}
+const SECOND_FACTOR_METHOD = {
+  TOTP: 'totp',
+  BACKUP_CODE: 'backup_code',
+  PHONE_CODE: 'phone_code',
+  EMAIL_CODE: 'email_code',
+};
 
 function getErrorMessage(error, fallback) {
   if (!error) {
@@ -36,8 +33,54 @@ function getErrorMessage(error, fallback) {
   return fallback;
 }
 
-function supportsEmailSecondFactor(factors) {
-  return (factors || []).some((factor) => factor.strategy === MFA_EMAIL_CODE);
+function buildSecondFactorAvailability(factors) {
+  const strategies = (factors || []).map((factor) => factor.strategy);
+  return {
+    [SECOND_FACTOR_METHOD.TOTP]: strategies.includes(SECOND_FACTOR_METHOD.TOTP),
+    [SECOND_FACTOR_METHOD.BACKUP_CODE]: strategies.includes(SECOND_FACTOR_METHOD.BACKUP_CODE),
+    [SECOND_FACTOR_METHOD.PHONE_CODE]: strategies.includes(SECOND_FACTOR_METHOD.PHONE_CODE),
+    [SECOND_FACTOR_METHOD.EMAIL_CODE]: strategies.includes(SECOND_FACTOR_METHOD.EMAIL_CODE),
+  };
+}
+
+function getDefaultSecondFactorMethod(availability) {
+  if (availability[SECOND_FACTOR_METHOD.TOTP]) {
+    return SECOND_FACTOR_METHOD.TOTP;
+  }
+
+  if (availability[SECOND_FACTOR_METHOD.PHONE_CODE]) {
+    return SECOND_FACTOR_METHOD.PHONE_CODE;
+  }
+
+  if (availability[SECOND_FACTOR_METHOD.EMAIL_CODE]) {
+    return SECOND_FACTOR_METHOD.EMAIL_CODE;
+  }
+
+  if (availability[SECOND_FACTOR_METHOD.BACKUP_CODE]) {
+    return SECOND_FACTOR_METHOD.BACKUP_CODE;
+  }
+
+  return null;
+}
+
+function getSecondFactorPrompt(method) {
+  if (method === SECOND_FACTOR_METHOD.BACKUP_CODE) {
+    return 'Enter one of your backup codes.';
+  }
+
+  if (method === SECOND_FACTOR_METHOD.TOTP) {
+    return 'Enter the code from your authenticator application.';
+  }
+
+  if (method === SECOND_FACTOR_METHOD.PHONE_CODE) {
+    return 'Enter the verification code sent to your phone.';
+  }
+
+  if (method === SECOND_FACTOR_METHOD.EMAIL_CODE) {
+    return 'Enter the verification code sent to your email.';
+  }
+
+  return 'Enter your second-factor code.';
 }
 
 export default function LoginForm({ initialMessage = '', nextPath = '' }) {
@@ -52,6 +95,13 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
   const [stage, setStage] = useState('password');
   const [secondFactorCode, setSecondFactorCode] = useState('');
   const [secondFactorInfo, setSecondFactorInfo] = useState('');
+  const [availableSecondFactors, setAvailableSecondFactors] = useState({
+    [SECOND_FACTOR_METHOD.TOTP]: false,
+    [SECOND_FACTOR_METHOD.BACKUP_CODE]: false,
+    [SECOND_FACTOR_METHOD.PHONE_CODE]: false,
+    [SECOND_FACTOR_METHOD.EMAIL_CODE]: false,
+  });
+  const [secondFactorMethod, setSecondFactorMethod] = useState(SECOND_FACTOR_METHOD.TOTP);
 
   const isBusy = fetchStatus === 'fetching';
 
@@ -89,10 +139,17 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
     }
 
     const destination = nextPath || '/chat';
+    const taskRoutes = {
+      'setup-mfa': '/setup-mfa',
+    };
 
     const { error: finalizeError } = await signIn.finalize({
-      navigate: ({ decorateUrl }) => {
-        const url = decorateUrl(destination);
+      navigate: ({ session, decorateUrl }) => {
+        const taskDestination = session?.currentTask ? taskRoutes[session.currentTask.key] : null;
+        const fallbackDestination = destination === '/setup-mfa' ? '/chat' : destination;
+        const navigationTarget = taskDestination || fallbackDestination;
+
+        const url = decorateUrl(navigationTarget);
         if (url.startsWith('http')) {
           window.location.href = url;
           return;
@@ -112,23 +169,32 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
     });
   }
 
-  async function sendSecondFactorCode() {
+  async function sendSecondFactorChallenge(method) {
     if (!signIn) {
       return;
     }
 
-    const { error: sendError } = await signIn.mfa.sendEmailCode();
-    if (sendError) {
-      throw new Error(getErrorMessage(sendError, 'Failed to send second-factor code'));
+    if (method === SECOND_FACTOR_METHOD.EMAIL_CODE) {
+      const response = await signIn.mfa.sendEmailCode();
+      if (response.error) {
+        throw new Error(getErrorMessage(response.error, 'Failed to send email code'));
+      }
+
+      setSecondFactorInfo('We sent a verification code to your email.');
+      return;
     }
 
-    if (isClerkTestEmail(email)) {
-      console.log('[dev][login][mfa] Clerk test email OTP code: 424242');
-    } else {
-      console.log('[dev][login][mfa] OTP email sent. Clerk does not expose the real OTP code to app code.');
+    if (method === SECOND_FACTOR_METHOD.PHONE_CODE) {
+      const response = await signIn.mfa.sendPhoneCode();
+      if (response.error) {
+        throw new Error(getErrorMessage(response.error, 'Failed to send phone code'));
+      }
+
+      setSecondFactorInfo('We sent a verification code to your phone.');
+      return;
     }
 
-    setSecondFactorInfo('We sent a verification code to your email. Enter it below.');
+    setSecondFactorInfo(getSecondFactorPrompt(method));
   }
 
   async function moveToSecondFactorState() {
@@ -136,18 +202,43 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
       return;
     }
 
-    const factors = signIn.supportedSecondFactors || [];
+    const availability = buildSecondFactorAvailability(signIn.supportedSecondFactors || []);
+    const defaultMethod = getDefaultSecondFactorMethod(availability);
 
-    if (!supportsEmailSecondFactor(factors)) {
-      setError('Email second-factor is required, but this account does not have email MFA available.');
+    if (!defaultMethod) {
+      setError('No supported second-factor strategy is available for this account.');
       return;
     }
 
-    setStage('second-factor');
+    setAvailableSecondFactors(availability);
+    setSecondFactorMethod(defaultMethod);
     setSecondFactorCode('');
+    setStage('second-factor');
     setSecondFactorInfo('');
 
-    await sendSecondFactorCode();
+    await sendSecondFactorChallenge(defaultMethod);
+  }
+
+  async function handleSecondFactorMethodChange(nextMethod) {
+    if (!availableSecondFactors[nextMethod]) {
+      return;
+    }
+
+    setError('');
+    setSecondFactorMethod(nextMethod);
+    setSecondFactorCode('');
+
+    try {
+      await sendSecondFactorChallenge(nextMethod);
+      if (
+        nextMethod === SECOND_FACTOR_METHOD.EMAIL_CODE ||
+        nextMethod === SECOND_FACTOR_METHOD.PHONE_CODE
+      ) {
+        toast.success('Verification code sent');
+      }
+    } catch (methodError) {
+      setError(methodError.message || 'Failed to prepare second-factor verification');
+    }
   }
 
   async function handlePasswordSubmit(event) {
@@ -198,6 +289,11 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
         return;
       }
 
+      if (signIn.status === 'needs_client_trust') {
+        setError('Additional client trust verification is required. Complete the verification challenge and try again.');
+        return;
+      }
+
       setError('Login could not be completed. Please try again.');
     } catch (submitError) {
       setError(submitError.message || 'Failed to sign in');
@@ -213,8 +309,20 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
     }
 
     try {
-      const response = await signIn.mfa.verifyEmailCode({ code: secondFactorCode.trim() });
-      if (response.error) {
+      let response = null;
+      const code = secondFactorCode.trim();
+
+      if (secondFactorMethod === SECOND_FACTOR_METHOD.BACKUP_CODE) {
+        response = await signIn.mfa.verifyBackupCode({ code });
+      } else if (secondFactorMethod === SECOND_FACTOR_METHOD.TOTP) {
+        response = await signIn.mfa.verifyTOTP({ code });
+      } else if (secondFactorMethod === SECOND_FACTOR_METHOD.PHONE_CODE) {
+        response = await signIn.mfa.verifyPhoneCode({ code });
+      } else if (secondFactorMethod === SECOND_FACTOR_METHOD.EMAIL_CODE) {
+        response = await signIn.mfa.verifyEmailCode({ code });
+      }
+
+      if (response?.error) {
         setError(getErrorMessage(response.error, 'Second-factor verification failed'));
         return;
       }
@@ -230,14 +338,21 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
     }
   }
 
-  async function resendSecondFactorEmailCode() {
-    setError('');
-    try {
-      await sendSecondFactorCode();
-      toast.success('Verification code sent');
-    } catch (sendError) {
-      setError(sendError.message || 'Failed to resend verification code');
+  async function resetToPasswordStage() {
+    if (signIn) {
+      await signIn.reset();
     }
+
+    setStage('password');
+    setSecondFactorCode('');
+    setSecondFactorInfo('');
+    setAvailableSecondFactors({
+      [SECOND_FACTOR_METHOD.TOTP]: false,
+      [SECOND_FACTOR_METHOD.BACKUP_CODE]: false,
+      [SECOND_FACTOR_METHOD.PHONE_CODE]: false,
+      [SECOND_FACTOR_METHOD.EMAIL_CODE]: false,
+    });
+    setSecondFactorMethod(SECOND_FACTOR_METHOD.TOTP);
   }
 
   return (
@@ -295,8 +410,53 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
         </form>
       ) : (
         <form className="mt-4 space-y-4" onSubmit={handleSecondFactorSubmit}>
-          <p className="cyber-note cyber-note-info">Email verification code is required.</p>
+          <p className="cyber-note cyber-note-info">Second-factor verification is required.</p>
           {secondFactorInfo ? <p className="cyber-muted text-xs">{secondFactorInfo}</p> : null}
+          <p className="cyber-muted text-xs">
+            If you can&apos;t access your authenticator app, switch to <strong>Backup code</strong>.
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            {availableSecondFactors[SECOND_FACTOR_METHOD.TOTP] ? (
+              <button
+                type="button"
+                className={`cyber-btn ${secondFactorMethod === SECOND_FACTOR_METHOD.TOTP ? 'cyber-btn-solid' : 'cyber-btn-outline'}`}
+                onClick={() => handleSecondFactorMethodChange(SECOND_FACTOR_METHOD.TOTP)}
+              >
+                Authenticator app
+              </button>
+            ) : null}
+
+            {availableSecondFactors[SECOND_FACTOR_METHOD.BACKUP_CODE] ? (
+              <button
+                type="button"
+                className={`cyber-btn ${secondFactorMethod === SECOND_FACTOR_METHOD.BACKUP_CODE ? 'cyber-btn-solid' : 'cyber-btn-outline'}`}
+                onClick={() => handleSecondFactorMethodChange(SECOND_FACTOR_METHOD.BACKUP_CODE)}
+              >
+                Backup code
+              </button>
+            ) : null}
+
+            {availableSecondFactors[SECOND_FACTOR_METHOD.EMAIL_CODE] ? (
+              <button
+                type="button"
+                className={`cyber-btn ${secondFactorMethod === SECOND_FACTOR_METHOD.EMAIL_CODE ? 'cyber-btn-solid' : 'cyber-btn-outline'}`}
+                onClick={() => handleSecondFactorMethodChange(SECOND_FACTOR_METHOD.EMAIL_CODE)}
+              >
+                Email code
+              </button>
+            ) : null}
+
+            {availableSecondFactors[SECOND_FACTOR_METHOD.PHONE_CODE] ? (
+              <button
+                type="button"
+                className={`cyber-btn ${secondFactorMethod === SECOND_FACTOR_METHOD.PHONE_CODE ? 'cyber-btn-solid' : 'cyber-btn-outline'}`}
+                onClick={() => handleSecondFactorMethodChange(SECOND_FACTOR_METHOD.PHONE_CODE)}
+              >
+                Phone code
+              </button>
+            ) : null}
+          </div>
 
           <label className="cyber-label" htmlFor="secondFactorCode">
             Code
@@ -313,14 +473,6 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
           </label>
 
           <button
-            type="button"
-            className="cyber-link text-xs"
-            onClick={resendSecondFactorEmailCode}
-          >
-            Resend verification code
-          </button>
-
-          <button
             type="submit"
             className="cyber-btn cyber-btn-solid w-full"
             disabled={isBusy || !secondFactorCode.trim()}
@@ -331,15 +483,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
           <button
             type="button"
             className="cyber-btn cyber-btn-outline w-full"
-            onClick={async () => {
-              if (signIn) {
-                await signIn.reset();
-              }
-
-              setStage('password');
-              setSecondFactorCode('');
-              setSecondFactorInfo('');
-            }}
+            onClick={resetToPasswordStage}
           >
             Back to password
           </button>

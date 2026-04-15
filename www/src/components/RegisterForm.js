@@ -63,7 +63,8 @@ export default function RegisterForm() {
         <p className="cyber-kicker">Registration Complete</p>
         <h1 className="cyber-title mt-3 text-2xl font-bold text-foreground">Check your inbox</h1>
         <p className="cyber-muted mt-2 text-sm">
-          We sent a verification email. Click the link in the email to finish verification, then log in.
+          We sent a verification email. After you verify your email and log in, you&apos;ll be prompted to set up
+          multi-factor authentication with an authenticator app and backup codes.
         </p>
         <Link className="cyber-link mt-5 inline-block text-sm" href="/login">
           Go to login

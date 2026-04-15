@@ -6,7 +6,7 @@ import LoginForm from '@/components/LoginForm';
 function getVerificationMessage(status) {
   switch (status) {
     case 'success':
-      return 'Email verified successfully. You can now log in.';
+      return 'Email verified successfully. Log in to continue MFA setup.';
     case 'expired':
       return 'Verification link expired. Request a new one below.';
     case 'already_used':

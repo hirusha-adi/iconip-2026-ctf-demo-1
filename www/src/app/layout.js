@@ -12,7 +12,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <ClerkProvider>
+        <ClerkProvider taskUrls={{ 'setup-mfa': '/setup-mfa' }}>
           {children}
           <ToastProvider />
         </ClerkProvider>
