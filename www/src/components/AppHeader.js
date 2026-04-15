@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import {
   BookOpen,
   ChevronDown,
@@ -25,12 +28,36 @@ export default function AppHeader({ profile, active = '', title = 'Workspace' })
   const firstName = profile?.first_name || 'User';
   const email = profile?.email || '';
   const showAdmin = Boolean(profile?.is_admin);
+  const exploreRef = useRef(null);
+  const accountRef = useRef(null);
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      if (exploreRef.current?.open && !exploreRef.current.contains(event.target)) {
+        exploreRef.current.open = false;
+      }
+
+      if (accountRef.current?.open && !accountRef.current.contains(event.target)) {
+        accountRef.current.open = false;
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, []);
 
   return (
     <header className="cyber-page-header">
       <div>
-        <p className="cyber-kicker">{title}</p>
-        <p className="cyber-page-title">Welcome back {firstName}{email ? ` (${email})` : ''}</p>
+        <p className="cyber-page-subtitle">Welcome back {firstName}{email ? ` (${email})` : ''}</p>
+        <p className="cyber-page-title !text-[1.1rem]">ICONIP2026 CTF</p>
+        <p className="cyber-kicker mt-1">{title}</p>
       </div>
 
       <nav className="cyber-page-actions" aria-label="Account navigation">
@@ -39,7 +66,15 @@ export default function AppHeader({ profile, active = '', title = 'Workspace' })
           Chat
         </Link>
 
-        <details className="group relative">
+        <details
+          ref={exploreRef}
+          className="group relative"
+          onToggle={() => {
+            if (exploreRef.current?.open && accountRef.current) {
+              accountRef.current.open = false;
+            }
+          }}
+        >
           <summary
             className={`${groupedButtonClass(active, ['leaderboards', 'guide', 'prizes'])} list-none [&::-webkit-details-marker]:hidden`}
           >
@@ -63,7 +98,15 @@ export default function AppHeader({ profile, active = '', title = 'Workspace' })
           </div>
         </details>
 
-        <details className="group relative">
+        <details
+          ref={accountRef}
+          className="group relative"
+          onToggle={() => {
+            if (accountRef.current?.open && exploreRef.current) {
+              exploreRef.current.open = false;
+            }
+          }}
+        >
           <summary
             className={`${groupedButtonClass(active, ['user', 'admin'])} list-none [&::-webkit-details-marker]:hidden`}
           >

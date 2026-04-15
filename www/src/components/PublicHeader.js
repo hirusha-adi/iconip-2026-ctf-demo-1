@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import { ArrowRight, BookOpen, ChevronDown, Compass, Gift, Home, Trophy } from 'lucide-react';
 
 function getNavClass(activeKey, key, inactiveClass) {
@@ -12,11 +15,31 @@ function groupedButtonClass(active, keys) {
 }
 
 export default function PublicHeader({ active = '' }) {
+  const exploreRef = useRef(null);
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      if (exploreRef.current?.open && !exploreRef.current.contains(event.target)) {
+        exploreRef.current.open = false;
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, []);
+
   return (
     <header className="cyber-page-header">
       <div>
-        <p className="cyber-kicker">ICONIP 2026</p>
-        <p className="cyber-page-title">CTF Demo Portal</p>
+        <p className="cyber-page-subtitle">Welcome</p>
+        <p className="cyber-page-title !text-[1.1rem]">ICONIP2026 CTF</p>
+        <p className="cyber-kicker mt-1">CTF Demo Portal</p>
       </div>
 
       <nav className="cyber-page-actions" aria-label="Primary navigation">
@@ -25,7 +48,7 @@ export default function PublicHeader({ active = '' }) {
           Home
         </Link>
 
-        <details className="group relative">
+        <details ref={exploreRef} className="group relative">
           <summary
             className={`${groupedButtonClass(active, ['leaderboards', 'guide', 'prizes'])} list-none [&::-webkit-details-marker]:hidden`}
           >

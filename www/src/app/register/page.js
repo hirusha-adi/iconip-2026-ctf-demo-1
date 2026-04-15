@@ -12,8 +12,8 @@ export default async function RegisterPage() {
   }
 
   return (
-    <main className="flex flex-1">
-      <div className="cyber-page-shell flex flex-1 flex-col">
+    <main className="flex flex-1 justify-center">
+      <div className="cyber-page-shell w-full flex flex-col">
         <PublicHeader active="register" />
 
         <section className="cyber-page-content flex flex-1 items-center justify-center px-2 py-6">
