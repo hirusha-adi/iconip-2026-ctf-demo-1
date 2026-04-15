@@ -2,7 +2,7 @@ import AppHeader from "@/components/AppHeader";
 import PublicHeader from "@/components/PublicHeader";
 import LeaderboardsClient from "@/components/LeaderboardsClient";
 import { getApiUserContext } from "@/lib/server/authz";
-import { getLeaderboardSnapshot } from "@/lib/server/db";
+import { getGlobalPersuasionPoints, getLeaderboardSnapshot } from "@/lib/server/db";
 
 export default async function LeaderboardsPage() {
   const { userId, profile } = await getApiUserContext();
@@ -10,6 +10,7 @@ export default async function LeaderboardsPage() {
     viewerUserId: userId,
     limit: 200,
   });
+  const globalPointsTotal = await getGlobalPersuasionPoints();
 
   return (
     <main className="flex flex-1">
@@ -21,7 +22,11 @@ export default async function LeaderboardsPage() {
         )}
 
         <section className="cyber-page-content !mt-8 !mb-2">
-          <LeaderboardsClient snapshot={snapshot} isViewerLoggedIn={Boolean(userId)} />
+          <LeaderboardsClient
+            snapshot={snapshot}
+            isViewerLoggedIn={Boolean(userId)}
+            globalPointsTotal={globalPointsTotal}
+          />
         </section>
       </div>
     </main>
