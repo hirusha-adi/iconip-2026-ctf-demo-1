@@ -817,7 +817,7 @@ export async function getAdminUsers() {
 export async function getAdminUserDetail(targetUserId) {
   const supabase = getSupabaseAdmin();
 
-  const [profileResult, sessionsResult, messagesResult, authEventsResult, routeLogsResult, adminLogsResult] =
+  const [profileResult, sessionsResult, messagesResult, attachmentsResult, authEventsResult, routeLogsResult, adminLogsResult] =
     await Promise.all([
       supabase
         .from('profiles')
@@ -836,8 +836,13 @@ export async function getAdminUserDetail(targetUserId) {
         .select('*')
         .eq('clerk_user_id', targetUserId)
         .is('deleted_at', null)
-        .order('created_at', { ascending: false })
-        .limit(300),
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('chat_message_attachments')
+        .select('*')
+        .eq('clerk_user_id', targetUserId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false }),
       supabase
         .from('auth_events')
         .select('*')
@@ -870,6 +875,10 @@ export async function getAdminUserDetail(targetUserId) {
     throw messagesResult.error;
   }
 
+  if (attachmentsResult.error) {
+    throw attachmentsResult.error;
+  }
+
   if (authEventsResult.error) {
     throw authEventsResult.error;
   }
@@ -886,6 +895,7 @@ export async function getAdminUserDetail(targetUserId) {
     profile: profileResult.data ?? null,
     sessions: sessionsResult.data ?? [],
     messages: messagesResult.data ?? [],
+    attachments: attachmentsResult.data ?? [],
     authEvents: authEventsResult.data ?? [],
     routeLogs: routeLogsResult.data ?? [],
     adminLogs: adminLogsResult.data ?? [],

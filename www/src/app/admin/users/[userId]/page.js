@@ -117,6 +117,21 @@ export default async function AdminUserDetailPage({ params }) {
   }
 
   const invalidRouteAttempts = detail.routeLogs.filter((entry) => entry.status === 'invalid_route').length;
+  const attachmentsByMessageId = new Map();
+  const sessionsById = new Map(detail.sessions.map((session) => [session.id, session]));
+  const messagesById = new Map(detail.messages.map((message) => [message.id, message]));
+
+  for (const attachment of detail.attachments) {
+    if (!attachment.message_id) {
+      continue;
+    }
+
+    if (!attachmentsByMessageId.has(attachment.message_id)) {
+      attachmentsByMessageId.set(attachment.message_id, []);
+    }
+
+    attachmentsByMessageId.get(attachment.message_id).push(attachment);
+  }
 
   return (
     <section className="space-y-4">
@@ -225,6 +240,7 @@ export default async function AdminUserDetailPage({ params }) {
             <li>Last seen: {detail.profile.last_seen_at ? new Date(detail.profile.last_seen_at).toLocaleString() : 'Never'}</li>
             <li>Total chat sessions: {detail.sessions.length}</li>
             <li>Total messages loaded: {detail.messages.length}</li>
+            <li>Total attachments loaded: {detail.attachments.length}</li>
             <li>Invalid route attempts: {invalidRouteAttempts}</li>
           </ul>
         </Card>
@@ -245,11 +261,36 @@ export default async function AdminUserDetailPage({ params }) {
                     Created: {new Date(session.created_at).toLocaleString()} {session.is_ended ? '• Ended' : ''}
                   </p>
                   <div className="mt-2 space-y-1">
-                    {sessionMessages.map((message) => (
-                      <p key={message.id} className="text-sm text-foreground">
-                        <span className="font-medium">{message.role}:</span> {message.content}
-                      </p>
-                    ))}
+                    {sessionMessages.map((message) => {
+                      const messageAttachments = attachmentsByMessageId.get(message.id) ?? [];
+
+                      return (
+                        <div key={message.id} className="cyber-note p-2">
+                          <p className="text-sm text-foreground">
+                            <span className="font-medium">{message.role}:</span>{' '}
+                            {message.content ? message.content : <span className="cyber-muted">(no text)</span>}
+                          </p>
+                          {messageAttachments.length ? (
+                            <div className="mt-2 space-y-1">
+                              {messageAttachments.map((attachment) => (
+                                <p key={attachment.id} className="text-xs">
+                                  <a
+                                    className="cyber-link"
+                                    href={attachment.storage_file_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download={attachment.original_filename}
+                                  >
+                                    Download {attachment.original_filename}
+                                  </a>
+                                  <span className="cyber-muted"> · {formatAttachmentMeta(attachment)}</span>
+                                </p>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
                     {!sessionMessages.length ? <p className="cyber-muted text-sm">No messages in this session.</p> : null}
                   </div>
                 </article>
@@ -278,8 +319,75 @@ export default async function AdminUserDetailPage({ params }) {
           <EventList items={detail.adminLogs} emptyText="No admin changes recorded." />
         </div>
       </Card>
+
+      <Card title="User attachments">
+        <div className="cyber-scroll h-[28rem] overflow-y-auto pr-1">
+          {detail.attachments.length ? (
+            <ul className="space-y-2">
+              {detail.attachments.map((attachment) => {
+                const linkedSession = sessionsById.get(attachment.session_id);
+                const linkedMessage = attachment.message_id ? messagesById.get(attachment.message_id) : null;
+
+                return (
+                  <li key={attachment.id} className="cyber-note p-2 text-xs text-foreground">
+                    <p className="cyber-accent-text font-semibold">{attachment.original_filename}</p>
+                    <p>{formatAttachmentMeta(attachment)}</p>
+                    <p className="cyber-muted">
+                      Chat: {linkedSession ? linkedSession.title : `Unknown (${attachment.session_id})`}
+                    </p>
+                    <p className="cyber-muted">
+                      Linked message:{' '}
+                      {linkedMessage
+                        ? `${linkedMessage.role} • ${new Date(linkedMessage.created_at).toLocaleString()}`
+                        : 'Not linked to a message'}
+                    </p>
+                    <a
+                      className="cyber-link"
+                      href={attachment.storage_file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      download={attachment.original_filename}
+                    >
+                      Download attachment
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="cyber-muted text-sm">No attachments uploaded by this user.</p>
+          )}
+        </div>
+      </Card>
     </section>
   );
+}
+
+function formatBytes(bytes) {
+  const value = Number(bytes);
+  if (!Number.isFinite(value) || value <= 0) {
+    return '0 B';
+  }
+
+  if (value < 1024) {
+    return `${value} B`;
+  }
+
+  if (value < 1024 * 1024) {
+    return `${(value / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function formatAttachmentMeta(attachment) {
+  const parts = [String(attachment.kind || 'file').toUpperCase(), formatBytes(attachment.byte_size)];
+
+  if (attachment.kind === 'video' && attachment.duration_seconds !== null && attachment.duration_seconds !== undefined) {
+    parts.push(`${Number(attachment.duration_seconds).toFixed(1)}s`);
+  }
+
+  return parts.join(' · ');
 }
 
 function Card({ title, children }) {
