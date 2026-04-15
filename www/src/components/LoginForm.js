@@ -330,7 +330,6 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
 
   return (
     <section className="w-full px-1 sm:px-0">
-      <p className="cyber-kicker">User Authentication</p>
       <h1 className="cyber-title mt-3 text-2xl font-bold text-foreground">Login</h1>
       <p className="cyber-muted mt-1 text-sm">Sign in to continue to chat.</p>
 

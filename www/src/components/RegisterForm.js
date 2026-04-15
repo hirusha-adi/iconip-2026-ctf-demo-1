@@ -59,7 +59,7 @@ export default function RegisterForm() {
 
   if (registered) {
     return (
-      <div className="cyber-card cyber-terminal w-full p-6">
+      <section className="w-full px-1 sm:px-0">
         <p className="cyber-kicker">Registration Complete</p>
         <h1 className="cyber-title mt-3 text-2xl font-bold text-foreground">Check your inbox</h1>
         <p className="cyber-muted mt-2 text-sm">
@@ -69,19 +69,18 @@ export default function RegisterForm() {
         <Link className="cyber-link mt-5 inline-block text-sm" href="/login">
           Go to login
         </Link>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="cyber-card cyber-terminal w-full p-6">
-      <p className="cyber-kicker">Create Account</p>
+    <section className="w-full px-1 sm:px-0">
       <h1 className="cyber-title mt-3 text-2xl font-bold text-foreground">Register</h1>
       <p className="cyber-muted mt-1 text-sm">Create your account to access the CTF chat.</p>
 
       {error ? <p className="cyber-note cyber-note-error mt-4">{error}</p> : null}
 
-      <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+      <form className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
         <label className="cyber-label" htmlFor="firstName">
           First name
           <div className="cyber-input-wrap">
@@ -108,7 +107,7 @@ export default function RegisterForm() {
           </div>
         </label>
 
-        <label className="cyber-label" htmlFor="email">
+        <label className="cyber-label sm:col-span-2" htmlFor="email">
           Email
           <div className="cyber-input-wrap">
             <input
@@ -122,7 +121,7 @@ export default function RegisterForm() {
           </div>
         </label>
 
-        <label className="cyber-label" htmlFor="password">
+        <label className="cyber-label sm:col-span-2" htmlFor="password">
           Password
           <div className="cyber-input-wrap">
             <input
@@ -136,7 +135,7 @@ export default function RegisterForm() {
           </div>
         </label>
 
-        <label className="cyber-label" htmlFor="confirmPassword">
+        <label className="cyber-label sm:col-span-2" htmlFor="confirmPassword">
           Confirm password
           <div className="cyber-input-wrap">
             <input
@@ -150,18 +149,20 @@ export default function RegisterForm() {
           </div>
         </label>
 
-        <button
-          type="submit"
-          className="cyber-btn cyber-btn-solid w-full"
-          disabled={submitting}
-        >
-          {submitting ? 'Registering...' : 'Register'}
-        </button>
+        <div className="sm:col-span-2">
+          <button
+            type="submit"
+            className="cyber-btn cyber-btn-solid w-full"
+            disabled={submitting}
+          >
+            {submitting ? 'Registering...' : 'Register'}
+          </button>
+        </div>
       </form>
 
       <p className="cyber-muted mt-4 text-sm">
         Already have an account? <Link className="cyber-link" href="/login">Login</Link>
       </p>
-    </div>
+    </section>
   );
 }

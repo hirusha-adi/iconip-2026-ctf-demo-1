@@ -120,7 +120,7 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
               <h2 className="cyber-title text-lg font-semibold text-foreground">Profile</h2>
               <p className="cyber-muted mt-1 text-xs">Email: {user.primaryEmailAddress?.emailAddress || initialEmail}</p>
 
-              <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={handleUpdateName}>
+              <form className="mt-4 grid grid-cols-1 gap-3" onSubmit={handleUpdateName}>
                 <label className="cyber-label" htmlFor="firstName">
                   First name
                   <div className="cyber-input-wrap">
@@ -147,7 +147,7 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
                   </div>
                 </label>
 
-                <div className="sm:col-span-2">
+                <div>
                   <button type="submit" className="cyber-btn cyber-btn-solid" disabled={busy === 'name'}>
                     {busy === 'name' ? 'Saving...' : 'Save name'}
                   </button>
