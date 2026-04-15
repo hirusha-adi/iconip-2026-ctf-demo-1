@@ -329,7 +329,7 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
   }
 
   return (
-    <div className="cyber-card cyber-terminal w-full p-6">
+    <section className="w-full px-1 sm:px-0">
       <p className="cyber-kicker">User Authentication</p>
       <h1 className="cyber-title mt-3 text-2xl font-bold text-foreground">Login</h1>
       <p className="cyber-muted mt-1 text-sm">Sign in to continue to chat.</p>
@@ -471,6 +471,6 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
           Register
         </Link>
       </p>
-    </div>
+    </section>
   );
 }

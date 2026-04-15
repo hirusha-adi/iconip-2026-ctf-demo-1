@@ -37,20 +37,13 @@ export default async function LoginPage({ searchParams }) {
 
   return (
     <main className="flex flex-1">
-      <div className="cyber-page-shell">
+      <div className="cyber-page-shell flex flex-1 flex-col">
         <PublicHeader active="login" />
 
-        <section className="cyber-page-content grid gap-4 lg:grid-cols-[minmax(0,680px)_minmax(0,1fr)] lg:items-start">
-          <LoginForm initialMessage={getVerificationMessage(verificationStatus)} nextPath={nextPath} />
-
-          <aside className="cyber-card p-6">
-            <p className="cyber-kicker">Authentication</p>
-            <h2 className="cyber-title mt-2 text-xl font-semibold text-foreground">Secure sign-in flow</h2>
-            <p className="cyber-muted mt-2 text-sm">
-              Use email and password, then complete second-factor verification with authenticator app, backup code, or
-              email code.
-            </p>
-          </aside>
+        <section className="cyber-page-content flex flex-1 items-center justify-center px-2 py-6">
+          <div className="w-full max-w-xl">
+            <LoginForm initialMessage={getVerificationMessage(verificationStatus)} nextPath={nextPath} />
+          </div>
         </section>
       </div>
     </main>
