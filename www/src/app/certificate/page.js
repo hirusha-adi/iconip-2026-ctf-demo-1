@@ -32,18 +32,15 @@ export default async function CertificatePage() {
 
         <section className="cyber-page-content !mt-8">
           {canGenerateCertificate ? (
-            <div className="space-y-4">
-              <div>
-                <p className="cyber-kicker">Participation Certificate</p>
-                <h1 className="cyber-title mt-2 text-2xl font-semibold text-foreground">
-                  Certificate for {displayName}
+            <div className="space-y-5">
+              <div className="text-center">
+                <p className="cyber-kicker">Certificate of Participation</p>
+                <h1 className="cyber-title mt-2 text-xl font-semibold text-foreground">
+                  {displayName}
                 </h1>
-                <p className="cyber-muted mt-2 text-sm">
-                  Your certificate is generated dynamically from your account details.
-                </p>
               </div>
 
-              <div className="overflow-hidden rounded-2xl border border-[rgba(61,72,82,0.16)] bg-[rgba(255,255,255,0.35)]">
+              <div className="overflow-hidden rounded-xl border border-[rgba(61,72,82,0.16)] bg-[#f4f4f4] shadow-[0_12px_30px_rgba(20,40,82,0.12)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/api/certificate"
@@ -52,7 +49,7 @@ export default async function CertificatePage() {
                 />
               </div>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <a className="cyber-btn cyber-btn-solid" href="/api/certificate?download=1">
                   <Download size={16} />
                   Download certificate
@@ -88,4 +85,3 @@ export default async function CertificatePage() {
     </main>
   );
 }
-
