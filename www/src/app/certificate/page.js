@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, MessageSquare } from "lucide-react";
+import { ArrowLeft, Download, MessageSquare } from "lucide-react";
 
 import AppHeader from "@/components/AppHeader";
 import { requirePageUser } from "@/lib/server/authz";
@@ -32,32 +32,36 @@ export default async function CertificatePage() {
 
         <section className="cyber-page-content !mt-8">
           {canGenerateCertificate ? (
-            <div className="space-y-5">
-              <div className="text-center">
-                <p className="cyber-kicker">Certificate of Participation</p>
-                <h1 className="cyber-title mt-2 text-xl font-semibold text-foreground">
-                  {displayName}
-                </h1>
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="max-w-2xl">
+                  <h1 className="cyber-title text-3xl font-semibold text-foreground">
+                    Certificate of Participation
+                  </h1>
+                  <p className="cyber-muted mt-2 text-sm">
+                    Generated for {displayName}. Preview and download your certificate below.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link className="cyber-btn cyber-btn-chat" href="/user">
+                    <ArrowLeft size={16} />
+                    Back
+                  </Link>
+                  <a className="cyber-btn cyber-btn-solid" href="/api/certificate?download=1">
+                    <Download size={16} />
+                    Download
+                  </a>
+                </div>
               </div>
 
-              <div className="overflow-hidden rounded-xl border border-[rgba(61,72,82,0.16)] bg-[#f4f4f4] shadow-[0_12px_30px_rgba(20,40,82,0.12)]">
+              <div className="overflow-hidden rounded-[2rem] border border-[rgba(61,72,82,0.2)] bg-[#f4f4f4] shadow-[0_14px_34px_rgba(20,40,82,0.12)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/api/certificate"
                   alt={`Certificate preview for ${displayName}`}
-                  className="h-auto w-full object-contain"
+                  className="block h-auto w-full object-contain"
                 />
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <a className="cyber-btn cyber-btn-solid" href="/api/certificate?download=1">
-                  <Download size={16} />
-                  Download certificate
-                </a>
-                <Link className="cyber-btn cyber-btn-chat" href="/chat">
-                  <MessageSquare size={16} />
-                  Back to chat
-                </Link>
               </div>
             </div>
           ) : (
