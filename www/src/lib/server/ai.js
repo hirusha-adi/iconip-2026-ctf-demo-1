@@ -5,6 +5,7 @@ import path from 'node:path';
 import OpenAI from 'openai';
 
 const OPENAI_MODEL = 'gpt-5-nano';
+const RATING_LINE_REGEX = /^<\{\[\{\{<<\[(10|[0-9])\/10\]>>\}\}\]\}>$/;
 
 let cachedMasterPrompt = null;
 let cachedClient = null;
@@ -36,7 +37,7 @@ async function getMasterPrompt() {
     return cachedMasterPrompt;
   }
 
-  const promptPath = path.join(process.cwd(), 'MASTER_PROMPT.md');
+  const promptPath = path.join(process.cwd(), 'MASTER_PROMPT_NEW.md');
   const prompt = await readFile(promptPath, 'utf8');
   cachedMasterPrompt = prompt;
   return cachedMasterPrompt;
@@ -58,11 +59,86 @@ function getOpenAIClient() {
 
 export function createSessionGreeting(firstName) {
   const safeName = String(firstName || '').trim() || 'there';
-  return `Hello ${safeName}, did you know that water is solid at room temperature?`;
+  return `Hello ${safeName}, did you know that water is generally liquid at room temperature?`;
 }
 
-export async function generateAssistantReply({ history }) {
-  const instructions = await getMasterPrompt();
+function buildPromptState({
+  globalPersuasionPoints = 0,
+  evidenceMemory = 'none',
+  inputModalityHint = 'none',
+  winToken = '',
+}) {
+  const safePoints = Number.isFinite(globalPersuasionPoints)
+    ? Math.max(0, Math.floor(globalPersuasionPoints))
+    : 0;
+  const safeEvidence = String(evidenceMemory || 'none').trim() || 'none';
+  const safeModality = String(inputModalityHint || 'none').trim().toLowerCase() || 'none';
+  const safeWinToken = String(winToken || '');
+
+  return {
+    globalPersuasionPoints: safePoints,
+    evidenceMemory: safeEvidence,
+    inputModalityHint: safeModality,
+    winToken: safeWinToken,
+  };
+}
+
+function injectPromptState(basePrompt, state) {
+  return basePrompt
+    .replaceAll('{{GLOBAL_PERSUASION_POINTS}}', String(state.globalPersuasionPoints))
+    .replaceAll('{{EVIDENCE_MEMORY}}', state.evidenceMemory)
+    .replaceAll('{{INPUT_MODALITY_HINT}}', state.inputModalityHint)
+    .replaceAll('{{WIN_TOKEN}}', state.winToken);
+}
+
+function splitAssistantReplyAndRating(rawText) {
+  const normalized = String(rawText || '').replace(/\r\n/g, '\n').trimEnd();
+  if (!normalized) {
+    return {
+      assistantText: '',
+      attemptRating: null,
+      rawText: '',
+    };
+  }
+
+  const lines = normalized.split('\n');
+  let rating = null;
+  const visibleLines = [];
+
+  for (const line of lines) {
+    const match = String(line || '').trim().match(RATING_LINE_REGEX);
+    if (match) {
+      rating = Number.parseInt(match[1], 10);
+      continue;
+    }
+
+    visibleLines.push(line);
+  }
+
+  const assistantText = visibleLines.join('\n').trim();
+
+  return {
+    assistantText: assistantText || 'I hear your argument and will consider it.',
+    attemptRating: Number.isFinite(rating) ? rating : null,
+    rawText: normalized,
+  };
+}
+
+export async function generateAssistantReply({
+  history,
+  globalPersuasionPoints = 0,
+  evidenceMemory = 'none',
+  inputModalityHint = 'none',
+  winToken = process.env.CHALLENGE_WIN_TOKEN || '',
+}) {
+  const masterPrompt = await getMasterPrompt();
+  const state = buildPromptState({
+    globalPersuasionPoints,
+    evidenceMemory,
+    inputModalityHint,
+    winToken,
+  });
+  const instructions = injectPromptState(masterPrompt, state);
   const input = (history || [])
     .filter((message) => message?.role === 'user' || message?.role === 'assistant')
     .map((message) => ({
@@ -82,5 +158,5 @@ export async function generateAssistantReply({ history }) {
     throw new Error('AI returned an empty response');
   }
 
-  return text;
+  return splitAssistantReplyAndRating(text);
 }
