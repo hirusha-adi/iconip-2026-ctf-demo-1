@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 
 import { createAuthEvent, consumeEmailVerificationToken, setProfileVerified } from '@/lib/server/db';
+import { APP_BASE_URL } from '@/lib/server/env';
 import { hashToken } from '@/lib/server/tokens';
+
+function redirectTo(pathnameWithQuery) {
+  return NextResponse.redirect(new URL(pathnameWithQuery, APP_BASE_URL));
+}
 
 export async function GET(request) {
   try {
@@ -9,14 +14,14 @@ export async function GET(request) {
     const token = url.searchParams.get('token');
 
     if (!token) {
-      return NextResponse.redirect(new URL('/login?verified=missing_token', request.url));
+      return redirectTo('/login?verified=missing_token');
     }
 
     const tokenHash = hashToken(token);
     const result = await consumeEmailVerificationToken(tokenHash);
 
     if (!result.ok) {
-      return NextResponse.redirect(new URL(`/login?verified=${result.reason}`, request.url));
+      return redirectTo(`/login?verified=${result.reason}`);
     }
 
     const updatedProfile = await setProfileVerified(result.email, true);
@@ -27,9 +32,9 @@ export async function GET(request) {
       eventType: 'verify_email_success',
     });
 
-    return NextResponse.redirect(new URL('/login?verified=success&next=/setup-mfa', request.url));
+    return redirectTo('/login?verified=success&next=/setup-mfa');
   } catch (error) {
     console.error('Email verification failed:', error);
-    return NextResponse.redirect(new URL('/login?verified=error', request.url));
+    return redirectTo('/login?verified=error');
   }
 }
