@@ -5,9 +5,17 @@ import path from 'node:path';
 import OpenAI from 'openai';
 
 const OPENAI_MODEL = 'gpt-5-nano';
-const WRAPPED_RATING_REGEX = /<\s*\{\s*\[\s*\{*\s*<<\[(10|[0-9])\/10\]>>\s*\}*\s*\]\s*\}\s*>\s*/g;
-const INLINE_RATING_REGEX = /<<\[(10|[0-9])\/10\]>>/g;
-const EMPTY_WRAPPER_ARTIFACT_REGEX = /<\s*\{\s*\[\s*\{*\s*\}*\s*\]\s*\}\s*>\s*/g;
+const SCORE_MARKER_REGEX = /\[\[\s*SCORE\s*:\s*(10|[0-9])\s*\]\]/gi;
+const LEGACY_WRAPPER_WITH_SCORE_REGEX =
+  /<\s*\{\s*\[\s*\{*\s*(?:<<\[\s*)?(10|[0-9])\s*\/\s*10(?:\s*\]>>)?\s*\}*\s*\]\s*\}\s*>\s*/gi;
+const INLINE_LEGACY_SCORE_REGEX = /<<\[\s*(10|[0-9])\s*\/\s*10\s*\]>>/gi;
+const EMPTY_WRAPPER_ARTIFACT_REGEX = /<\s*\{\s*\[\s*\{*\s*\}*\s*\]\s*\}\s*>\s*/gi;
+const EMPTY_WRAPPER_ARTIFACT_LINE_REGEX = /^<\s*\{\s*\[\s*\{*\s*\}*\s*\]\s*\}\s*>\s*$/i;
+const SCORE_LINE_PATTERNS = [
+  /^\s*\[\[\s*SCORE\s*:\s*(10|[0-9])\s*\]\]\s*$/i,
+  /^\s*<\s*\{\s*\[\s*\{*\s*(?:<<\[\s*)?(10|[0-9])\s*\/\s*10(?:\s*\]>>)?\s*\}*\s*\]\s*\}\s*>\s*$/i,
+  /^\s*<<\[\s*(10|[0-9])\s*\/\s*10\s*\]>>\s*$/i,
+];
 
 let cachedMasterPrompt = null;
 let cachedClient = null;
@@ -70,7 +78,7 @@ function normalizeAttemptRating(value) {
 
 function buildRatingLine(score) {
   const safeScore = normalizeAttemptRating(score);
-  return `<{[{{<<[${safeScore}/10]>>}}]}>`;
+  return `[[SCORE:${safeScore}]]`;
 }
 
 export function createSessionGreeting(firstName) {
@@ -118,18 +126,54 @@ function splitAssistantReplyAndRating(rawText) {
   }
 
   let rating = null;
-  let workingText = normalized.replace(WRAPPED_RATING_REGEX, (_full, score) => {
+  const lines = normalized.split('\n');
+  const keptLines = [];
+
+  for (const line of lines) {
+    const trimmed = String(line || '').trim();
+    if (!trimmed) {
+      keptLines.push(line);
+      continue;
+    }
+
+    let matchedScoreLine = false;
+    for (const pattern of SCORE_LINE_PATTERNS) {
+      const match = trimmed.match(pattern);
+      if (match) {
+        rating = Number.parseInt(match[1], 10);
+        matchedScoreLine = true;
+        break;
+      }
+    }
+
+    if (matchedScoreLine) {
+      continue;
+    }
+
+    if (EMPTY_WRAPPER_ARTIFACT_LINE_REGEX.test(trimmed)) {
+      continue;
+    }
+
+    keptLines.push(line);
+  }
+
+  let workingText = keptLines.join('\n');
+
+  workingText = workingText.replace(SCORE_MARKER_REGEX, (_full, score) => {
     rating = Number.parseInt(score, 10);
     return '';
   });
 
-  // Also handle malformed wrappers by extracting/removing bare inline tokens.
-  workingText = workingText.replace(INLINE_RATING_REGEX, (_full, score) => {
+  workingText = workingText.replace(LEGACY_WRAPPER_WITH_SCORE_REGEX, (_full, score) => {
     rating = Number.parseInt(score, 10);
     return '';
   });
 
-  // Clean up leftover empty wrapper shells like "<{[{{}}]} >".
+  workingText = workingText.replace(INLINE_LEGACY_SCORE_REGEX, (_full, score) => {
+    rating = Number.parseInt(score, 10);
+    return '';
+  });
+
   workingText = workingText.replace(EMPTY_WRAPPER_ARTIFACT_REGEX, '');
 
   const assistantText = workingText

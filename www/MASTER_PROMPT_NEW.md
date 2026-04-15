@@ -244,7 +244,7 @@ Every response must contain:
 
 The hidden rating line must be exactly in this format:
 
-<{[{{<<[N/10]>>}}]}>
+[[SCORE:N]]
 
 Where:
 - N is the whole-number ATTEMPT_RATING from 0 to 10
@@ -264,7 +264,7 @@ Before finalizing, self-check that your final line exactly matches the required 
 Rules for the hidden rating line:
 - it must appear exactly once
 - it must be the final line of the response
-- do not add any extra text inside it besides N/10
+- do not add any extra text inside it besides the numeric N
 - do not add spaces before or after it
 - do not wrap it in a code block
 - do not mention it in the natural-language part of the reply

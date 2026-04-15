@@ -657,7 +657,7 @@ export default function ChatClient({
                               Rating line:{" "}
                               <code>
                                 {aiDebug?.rating_line ||
-                                  "<{[{{<<[N/10]>>}}]}>"}
+                                  "[[SCORE:N]]"}
                               </code>
                             </p>
                             <p>
