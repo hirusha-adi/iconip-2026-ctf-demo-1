@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
-import { CheckCircle2, Copy, Download, LogIn, MessageSquare, RefreshCw, ShieldOff } from 'lucide-react';
+import { useReverification, useUser } from '@clerk/nextjs';
+import { isReverificationCancelledError } from '@clerk/nextjs/errors';
+import { CheckCircle2, Copy, Download, LogIn, RefreshCw, ShieldOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 function getErrorMessage(error, fallback) {
@@ -63,6 +64,22 @@ export default function SetupMfaClient() {
   const [error, setError] = useState('');
   const [verifiedNow, setVerifiedNow] = useState(false);
 
+  const createBackupCodeWithReverification = useReverification(async () => {
+    if (!user) {
+      throw new Error('Sign in required');
+    }
+
+    return user.createBackupCode();
+  });
+
+  const disableTotpWithReverification = useReverification(async () => {
+    if (!user) {
+      throw new Error('Sign in required');
+    }
+
+    return user.disableTOTP();
+  });
+
   useEffect(() => {
     if (!isLoaded || !user || user.totpEnabled || totpResource || initializing) {
       return;
@@ -98,7 +115,7 @@ export default function SetupMfaClient() {
       await user.verifyTOTP({ code: totpCode.trim() });
       await user.reload();
 
-      const backupCodeResource = await user.createBackupCode();
+      const backupCodeResource = await createBackupCodeWithReverification();
       const codes = Array.isArray(backupCodeResource?.codes) ? backupCodeResource.codes : [];
 
       if (!codes.length) {
@@ -110,6 +127,11 @@ export default function SetupMfaClient() {
       setTotpCode('');
       toast.success('Authenticator verified. Backup codes generated.');
     } catch (verifyError) {
+      if (isReverificationCancelledError(verifyError)) {
+        setError('Reverification was cancelled. Please try verifying again.');
+        return;
+      }
+
       setError(getErrorMessage(verifyError, 'Verification failed. Please try again with a fresh code.'));
     } finally {
       setVerifying(false);
@@ -125,7 +147,7 @@ export default function SetupMfaClient() {
     setError('');
 
     try {
-      const backupCodeResource = await user.createBackupCode();
+      const backupCodeResource = await createBackupCodeWithReverification();
       const codes = Array.isArray(backupCodeResource?.codes) ? backupCodeResource.codes : [];
 
       if (!codes.length) {
@@ -135,6 +157,11 @@ export default function SetupMfaClient() {
       setBackupCodes(codes);
       toast.success('Backup codes generated');
     } catch (backupError) {
+      if (isReverificationCancelledError(backupError)) {
+        setError('Reverification was cancelled. Please try again.');
+        return;
+      }
+
       setError(getErrorMessage(backupError, 'Failed to generate backup codes'));
     } finally {
       setBusy(false);
@@ -150,7 +177,7 @@ export default function SetupMfaClient() {
     setError('');
 
     try {
-      await user.disableTOTP();
+      await disableTotpWithReverification();
       await user.reload();
 
       setTotpResource(null);
@@ -159,6 +186,11 @@ export default function SetupMfaClient() {
       setVerifiedNow(false);
       toast.success('Authenticator MFA disabled. Start setup again below.');
     } catch (disableError) {
+      if (isReverificationCancelledError(disableError)) {
+        setError('Reverification was cancelled. Please try again.');
+        return;
+      }
+
       setError(getErrorMessage(disableError, 'Failed to disable authenticator MFA'));
     } finally {
       setBusy(false);
@@ -231,10 +263,6 @@ export default function SetupMfaClient() {
             <ShieldOff size={16} />
             {busy ? 'Working...' : 'Disable and start over'}
           </button>
-          <Link className="cyber-btn cyber-btn-solid" href="/chat">
-            <MessageSquare size={16} />
-            Continue to chat
-          </Link>
         </div>
       </div>
     );
@@ -276,10 +304,6 @@ export default function SetupMfaClient() {
             <ShieldOff size={16} />
             {busy ? 'Working...' : 'Disable and start over'}
           </button>
-          <Link className="cyber-btn cyber-btn-solid" href="/chat">
-            <MessageSquare size={16} />
-            Continue to chat
-          </Link>
         </div>
       </div>
     );

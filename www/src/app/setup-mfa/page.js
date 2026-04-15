@@ -17,7 +17,7 @@ export default async function SetupMfaPage() {
             <p className="cyber-kicker">MFA</p>
             <h2 className="cyber-title mt-2 text-xl font-semibold text-foreground">Authenticator + backup codes</h2>
             <p className="cyber-muted mt-2 text-sm">
-              Complete authenticator setup, verify one code, then save backup codes before returning to chat.
+              Complete authenticator setup, verify one code, then save backup codes for account recovery.
             </p>
           </aside>
         </section>
