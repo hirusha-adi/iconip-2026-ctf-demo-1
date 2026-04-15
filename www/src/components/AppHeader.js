@@ -1,8 +1,24 @@
 import Link from 'next/link';
-import { BookOpen, Gift, LogOut, MessageSquare, Shield, Trophy, User } from 'lucide-react';
+import {
+  BookOpen,
+  ChevronDown,
+  Compass,
+  Gift,
+  LogOut,
+  MessageSquare,
+  Shield,
+  Trophy,
+  User,
+} from 'lucide-react';
 
 function buttonClass(active, key, baseClass, activeClass) {
   return active === key ? `cyber-btn ${activeClass}` : `cyber-btn ${baseClass}`;
+}
+
+function groupedButtonClass(active, keys) {
+  return keys.includes(active)
+    ? 'cyber-btn cyber-btn-solid'
+    : 'cyber-btn cyber-btn-secondary';
 }
 
 export default function AppHeader({ profile, active = '', title = 'Workspace' }) {
@@ -22,35 +38,56 @@ export default function AppHeader({ profile, active = '', title = 'Workspace' })
           <MessageSquare size={16} />
           Chat
         </Link>
-        <Link className={buttonClass(active, 'user', 'cyber-btn-user', 'cyber-btn-user-active')} href="/user">
-          <User size={16} />
-          User
-        </Link>
-        <Link
-          className={buttonClass(active, 'leaderboards', 'cyber-btn-secondary', 'cyber-btn-solid')}
-          href="/leaderboards"
-        >
-          <Trophy size={16} />
-          Leaderboards
-        </Link>
-        <Link className={buttonClass(active, 'guide', 'cyber-btn-secondary', 'cyber-btn-solid')} href="/guide">
-          <BookOpen size={16} />
-          Guide
-        </Link>
-        <Link className={buttonClass(active, 'prizes', 'cyber-btn-secondary', 'cyber-btn-solid')} href="/prizes">
-          <Gift size={16} />
-          Prizes
-        </Link>
-        {showAdmin ? (
-          <Link className={buttonClass(active, 'admin', 'cyber-btn-admin', 'cyber-btn-admin-active')} href="/admin/users/">
-            <Shield size={16} />
-            Admin
-          </Link>
-        ) : null}
-        <Link className="cyber-btn cyber-btn-danger" href="/logout">
-          <LogOut size={16} />
-          Logout
-        </Link>
+
+        <details className="group relative">
+          <summary
+            className={`${groupedButtonClass(active, ['leaderboards', 'guide', 'prizes'])} list-none [&::-webkit-details-marker]:hidden`}
+          >
+            <Compass size={16} />
+            Explore
+            <ChevronDown size={14} className="transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-xl border border-[rgba(21,40,82,0.2)] bg-[var(--surface-elevated)] p-1 shadow-[0_12px_22px_rgba(20,40,82,0.14)]">
+            <Link className={`cyber-btn w-full justify-start ${active === 'leaderboards' ? 'cyber-btn-solid' : 'cyber-btn-outline'}`} href="/leaderboards">
+              <Trophy size={15} />
+              Leaderboards
+            </Link>
+            <Link className={`cyber-btn mt-1 w-full justify-start ${active === 'guide' ? 'cyber-btn-solid' : 'cyber-btn-outline'}`} href="/guide">
+              <BookOpen size={15} />
+              Guide
+            </Link>
+            <Link className={`cyber-btn mt-1 w-full justify-start ${active === 'prizes' ? 'cyber-btn-solid' : 'cyber-btn-outline'}`} href="/prizes">
+              <Gift size={15} />
+              Prizes
+            </Link>
+          </div>
+        </details>
+
+        <details className="group relative">
+          <summary
+            className={`${groupedButtonClass(active, ['user', 'admin'])} list-none [&::-webkit-details-marker]:hidden`}
+          >
+            <User size={16} />
+            Account
+            <ChevronDown size={14} className="transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-xl border border-[rgba(21,40,82,0.2)] bg-[var(--surface-elevated)] p-1 shadow-[0_12px_22px_rgba(20,40,82,0.14)]">
+            <Link className={`cyber-btn w-full justify-start ${active === 'user' ? 'cyber-btn-user-active' : 'cyber-btn-user'}`} href="/user">
+              <User size={15} />
+              User
+            </Link>
+            {showAdmin ? (
+              <Link className={`cyber-btn mt-1 w-full justify-start ${active === 'admin' ? 'cyber-btn-admin-active' : 'cyber-btn-admin'}`} href="/admin/users/">
+                <Shield size={15} />
+                Admin
+              </Link>
+            ) : null}
+            <Link className="cyber-btn cyber-btn-danger mt-1 w-full justify-start" href="/logout">
+              <LogOut size={15} />
+              Logout
+            </Link>
+          </div>
+        </details>
       </nav>
     </header>
   );
