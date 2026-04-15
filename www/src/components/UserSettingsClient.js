@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { LogIn, Save, Shield, UserRound } from 'lucide-react';
+import { Award, LogIn, Save, Shield, UserRound } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export default function UserSettingsClient({
@@ -121,22 +121,14 @@ export default function UserSettingsClient({
           <h1 className="cyber-title mt-2 text-3xl font-semibold text-foreground">User Settings</h1>
           <p className="cyber-muted mt-3 text-sm">Manage profile details, password, and security methods.</p>
           <p className="cyber-muted mt-2 text-sm">Changes are applied to your current account immediately.</p>
-
-          <div className="mt-6 border-t border-[rgba(61,72,82,0.16)] pt-5">
-            <p className="cyber-kicker">Certificate</p>
-            <p className="cyber-muted mt-2 text-sm">
-              Challenge points: <span className="font-semibold text-foreground">{numericPoints.toLocaleString()}</span>
-            </p>
-            {canGenerateCertificate ? (
-              <Link className="cyber-btn cyber-btn-solid mt-4 w-full sm:w-auto" href="/certificate">
-                Generate Certificate
+          {canGenerateCertificate ? (
+            <p className="mt-4">
+              <Link className="cyber-link inline-block text-sm" href="/certificate">
+                <Award size={14} className="mr-1 inline" />
+                Generate certificate of participation
               </Link>
-            ) : (
-              <p className="cyber-muted mt-3 text-sm">
-                Earn more than 5 points to unlock certificate generation.
-              </p>
-            )}
-          </div>
+            </p>
+          ) : null}
         </aside>
 
         <section className="border-l border-[rgba(61,72,82,0.22)] pl-6 sm:pl-8">
