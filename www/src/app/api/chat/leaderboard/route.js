@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-import { getChallengeLeaderboardSnapshot, getProfileByClerkId, touchLastSeen } from '@/lib/server/db';
+import { getLeaderboardSnapshot, getProfileByClerkId, touchLastSeen } from '@/lib/server/db';
 
 function isAccessDenied(profile) {
   return !profile || !profile.is_verified || profile.is_disabled;
@@ -19,10 +19,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const challenge = await getChallengeLeaderboardSnapshot({ viewerUserId: userId, limit: 20 });
+    const leaderboard = await getLeaderboardSnapshot({ viewerUserId: userId, limit: 200 });
     await touchLastSeen(userId, false);
 
-    return NextResponse.json({ challenge });
+    return NextResponse.json({ leaderboard });
   } catch (error) {
     console.error('Failed to load leaderboard:', error);
     return NextResponse.json({ error: 'Failed to load leaderboard' }, { status: 500 });

@@ -856,6 +856,25 @@ export async function getGlobalPersuasionPoints() {
   return Number(data?.total_points || 0);
 }
 
+export async function getUserPersuasionPoints(clerkUserId) {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from('persuasion_user_scores')
+    .select('total_points')
+    .eq('clerk_user_id', clerkUserId)
+    .maybeSingle();
+
+  if (error && !isNoRowsError(error)) {
+    if (isMissingChallengeSchemaError(error)) {
+      return 0;
+    }
+    throw error;
+  }
+
+  return Number(data?.total_points || 0);
+}
+
 export async function hasUserSubmissionHash({ clerkUserId, submissionHash }) {
   const safeHash = String(submissionHash || '').trim();
   if (!safeHash) {
@@ -879,6 +898,137 @@ export async function hasUserSubmissionHash({ clerkUserId, submissionHash }) {
   }
 
   return Boolean(data?.id);
+}
+
+export async function getLeaderboardSnapshot({ viewerUserId = null, limit = 100 } = {}) {
+  const supabase = getSupabaseAdmin();
+  const safeLimit = Math.max(1, Math.min(500, Number(limit) || 100));
+
+  const [scoresResult, totalParticipantsResult, viewerScoreResult] = await Promise.all([
+    supabase
+      .from('persuasion_user_scores')
+      .select('clerk_user_id, total_points, updated_at')
+      .order('total_points', { ascending: false })
+      .order('updated_at', { ascending: true })
+      .limit(safeLimit),
+    supabase.from('persuasion_user_scores').select('clerk_user_id', { count: 'exact', head: true }),
+    viewerUserId
+      ? supabase
+          .from('persuasion_user_scores')
+          .select('clerk_user_id, total_points, updated_at')
+          .eq('clerk_user_id', viewerUserId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+
+  if (scoresResult.error) {
+    if (isMissingChallengeSchemaError(scoresResult.error)) {
+      return {
+        totalParticipants: 0,
+        leaderboard: [],
+        viewer: null,
+      };
+    }
+    throw scoresResult.error;
+  }
+
+  if (totalParticipantsResult.error) {
+    if (isMissingChallengeSchemaError(totalParticipantsResult.error)) {
+      return {
+        totalParticipants: 0,
+        leaderboard: [],
+        viewer: null,
+      };
+    }
+    throw totalParticipantsResult.error;
+  }
+
+  if (viewerScoreResult.error && !isNoRowsError(viewerScoreResult.error)) {
+    if (isMissingChallengeSchemaError(viewerScoreResult.error)) {
+      return {
+        totalParticipants: 0,
+        leaderboard: [],
+        viewer: null,
+      };
+    }
+    throw viewerScoreResult.error;
+  }
+
+  const scoreRows = scoresResult.data ?? [];
+  const profileIds = [...new Set(scoreRows.map((row) => row.clerk_user_id).filter(Boolean))];
+  if (viewerUserId && viewerScoreResult.data?.clerk_user_id && !profileIds.includes(viewerUserId)) {
+    profileIds.push(viewerUserId);
+  }
+
+  let profilesById = new Map();
+  if (profileIds.length) {
+    const { data: profileRows, error: profileError } = await supabase
+      .from('profiles')
+      .select('clerk_user_id, first_name, last_name, email')
+      .in('clerk_user_id', profileIds)
+      .is('deleted_at', null);
+
+    if (profileError) {
+      if (isMissingChallengeSchemaError(profileError)) {
+        return {
+          totalParticipants: Number(totalParticipantsResult.count || 0),
+          leaderboard: [],
+          viewer: null,
+        };
+      }
+      throw profileError;
+    }
+
+    profilesById = new Map((profileRows ?? []).map((row) => [row.clerk_user_id, row]));
+  }
+
+  const leaderboard = scoreRows.map((row, index) => ({
+    rank: index + 1,
+    clerkUserId: row.clerk_user_id,
+    displayName: buildProfileDisplayName(profilesById.get(row.clerk_user_id)),
+    email: profilesById.get(row.clerk_user_id)?.email || '',
+    points: Number(row.total_points || 0),
+    isCurrentUser: viewerUserId ? row.clerk_user_id === viewerUserId : false,
+  }));
+
+  let viewer = null;
+  if (viewerUserId && viewerScoreResult.data?.clerk_user_id) {
+    const viewerPoints = Number(viewerScoreResult.data.total_points || 0);
+    let viewerRank = leaderboard.find((entry) => entry.clerkUserId === viewerUserId)?.rank ?? null;
+
+    if (!viewerRank) {
+      const { count: higherCount, error: rankError } = await supabase
+        .from('persuasion_user_scores')
+        .select('clerk_user_id', { count: 'exact', head: true })
+        .gt('total_points', viewerPoints);
+
+      if (rankError) {
+        if (isMissingChallengeSchemaError(rankError)) {
+          viewerRank = null;
+        } else {
+          throw rankError;
+        }
+      } else {
+        viewerRank = Number(higherCount || 0) + 1;
+      }
+    }
+
+    viewer = {
+      rank: viewerRank,
+      clerkUserId: viewerUserId,
+      displayName: buildProfileDisplayName(profilesById.get(viewerUserId)),
+      email: profilesById.get(viewerUserId)?.email || '',
+      points: viewerPoints,
+      isCurrentUser: true,
+      inTopLeaderboard: leaderboard.some((entry) => entry.clerkUserId === viewerUserId),
+    };
+  }
+
+  return {
+    totalParticipants: Number(totalParticipantsResult.count || 0),
+    leaderboard,
+    viewer,
+  };
 }
 
 export async function getPersuasionEvidenceMemory(limit = 80) {

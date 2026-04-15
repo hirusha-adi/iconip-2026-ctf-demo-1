@@ -1,18 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  BarChart3,
   Image as ImageIcon,
   Paperclip,
   PenLine,
-  PieChart,
   Plus,
   Save,
   SendHorizontal,
   Square,
-  Trophy,
   Users,
   Video,
   X,
@@ -44,31 +42,11 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function formatPercent(value) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) {
-    return "0.0";
-  }
-
-  return numeric.toFixed(1);
-}
-
-const PIE_COLORS = [
-  "#152852",
-  "#1f3b70",
-  "#2a4c8a",
-  "#3e73c4",
-  "#5a8ad4",
-  "#7ca4dd",
-];
-
 export default function ChatClient({
   initialSessions,
   initialSessionId,
   initialMessages,
   hasInvalidRequestedSession = false,
-  initialChallenge = null,
-  currentUserId = "",
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,8 +67,6 @@ export default function ChatClient({
   const [invalidRequestedSession, setInvalidRequestedSession] = useState(
     hasInvalidRequestedSession,
   );
-  const [challenge, setChallenge] = useState(initialChallenge);
-  const [leaderboardView, setLeaderboardView] = useState("list");
 
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -100,74 +76,6 @@ export default function ChatClient({
     () => sessions.find((session) => session.id === activeSessionId) ?? null,
     [sessions, activeSessionId],
   );
-  const leaderboard = useMemo(() => challenge?.leaderboard ?? [], [challenge]);
-  const viewerEntry = challenge?.viewer || null;
-  const globalPoints = Number(challenge?.globalPoints || 0);
-  const confidencePercent = Number(challenge?.globalConfidencePercent || 0);
-  const goalConfidencePercent = Number(challenge?.goalConfidencePercent || 90);
-  const goalProgressPercent =
-    goalConfidencePercent > 0
-      ? Math.min(100, (confidencePercent / goalConfidencePercent) * 100)
-      : 0;
-
-  const pieSegments = useMemo(() => {
-    if (!leaderboard.length || globalPoints <= 0) {
-      return [];
-    }
-
-    const entriesWithPoints = leaderboard
-      .filter((entry) => Number(entry.points || 0) > 0)
-      .slice(0, 6);
-    if (!entriesWithPoints.length) {
-      return [];
-    }
-
-    const topPoints = entriesWithPoints.reduce(
-      (sum, entry) => sum + Number(entry.points || 0),
-      0,
-    );
-    const segments = entriesWithPoints.map((entry, index) => ({
-      label: entry.displayName || "Participant",
-      points: Number(entry.points || 0),
-      color: PIE_COLORS[index % PIE_COLORS.length],
-      isCurrentUser:
-        entry.isCurrentUser ||
-        (currentUserId && entry.clerkUserId === currentUserId),
-    }));
-
-    const remainingPoints = Math.max(0, globalPoints - topPoints);
-    if (remainingPoints > 0) {
-      segments.push({
-        label: "Others",
-        points: remainingPoints,
-        color: "#9aa9c5",
-        isCurrentUser: false,
-      });
-    }
-
-    let cursor = 0;
-    return segments.map((segment) => {
-      const percent = (segment.points / globalPoints) * 100;
-      const start = cursor;
-      cursor += percent;
-      return {
-        ...segment,
-        percent: Math.round(percent * 10) / 10,
-        start,
-        end: cursor,
-      };
-    });
-  }, [leaderboard, globalPoints, currentUserId]);
-
-  const pieBackground = useMemo(() => {
-    if (!pieSegments.length) {
-      return "conic-gradient(#d6deec 0% 100%)";
-    }
-
-    return `conic-gradient(${pieSegments
-      .map((segment) => `${segment.color} ${segment.start}% ${segment.end}%`)
-      .join(", ")})`;
-  }, [pieSegments]);
 
   const inputDisabled =
     !activeSessionId ||
@@ -194,17 +102,6 @@ export default function ChatClient({
   },
   [router],
   );
-
-  const refreshChallenge = useCallback(async () => {
-    try {
-      const payload = await parseResponse(await fetch("/api/chat/leaderboard"));
-      if (payload?.challenge) {
-        setChallenge(payload.challenge);
-      }
-    } catch {
-      // Keep chat usable even if leaderboard refresh temporarily fails.
-    }
-  }, []);
 
   const resizeComposer = useCallback(() => {
     if (!composerTextareaRef.current) {
@@ -250,16 +147,6 @@ export default function ChatClient({
   useEffect(() => {
     resizeComposer();
   }, [input, resizeComposer]);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      refreshChallenge();
-    }, 15000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [refreshChallenge]);
 
   function startEditingSession(session) {
     setEditingSessionId(session.id);
@@ -503,10 +390,6 @@ export default function ChatClient({
         );
         return [...withoutOptimistic, ...insertedMessages];
       });
-      if (payload?.challenge) {
-        setChallenge(payload.challenge);
-      }
-
       setSessions((prev) =>
         prev.map((session) => {
           if (session.id !== activeSessionId) {
@@ -555,133 +438,6 @@ export default function ChatClient({
         </div>
 
         <div className="cyber-scroll min-h-0 flex-1 overflow-y-auto p-3">
-          <section className="cyber-leaderboard-card mb-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="cyber-kicker">Team confidence</p>
-              <span className="cyber-accent-text text-xs font-semibold">
-                {formatPercent(confidencePercent)}%
-              </span>
-            </div>
-            <div className="cyber-confidence-track mt-2">
-              <div
-                className="cyber-confidence-fill"
-                style={{ width: `${goalProgressPercent}%` }}
-              />
-            </div>
-            <p className="cyber-muted mt-2 text-[11px]">
-              {globalPoints.toLocaleString()} points shared by{" "}
-              {Number(challenge?.participantCount || 0).toLocaleString()}{" "}
-              participants
-            </p>
-
-            <div className="mt-3 grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                className={`cyber-leaderboard-tab ${leaderboardView === "list" ? "cyber-leaderboard-tab-active" : ""}`}
-                onClick={() => setLeaderboardView("list")}
-              >
-                <BarChart3 size={12} />
-                List
-              </button>
-              <button
-                type="button"
-                className={`cyber-leaderboard-tab ${leaderboardView === "pie" ? "cyber-leaderboard-tab-active" : ""}`}
-                onClick={() => setLeaderboardView("pie")}
-              >
-                <PieChart size={12} />
-                Pie
-              </button>
-            </div>
-
-            {leaderboardView === "list" ? (
-              <div className="mt-3 space-y-1.5">
-                {leaderboard.length ? (
-                  leaderboard.map((entry) => {
-                    const isCurrentUser =
-                      entry.isCurrentUser ||
-                      (currentUserId && entry.clerkUserId === currentUserId);
-                    return (
-                      <div
-                        key={entry.clerkUserId}
-                        className={`cyber-leaderboard-row ${isCurrentUser ? "cyber-leaderboard-row-active" : ""}`}
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-xs font-semibold text-foreground">
-                            #{entry.rank} {entry.displayName}
-                          </p>
-                          <p className="cyber-muted text-[11px]">
-                            {formatPercent(entry.contributionPercent)}%
-                          </p>
-                        </div>
-                        <span className="cyber-accent-text text-xs font-semibold">
-                          {entry.points}
-                        </span>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="cyber-muted text-xs">
-                    No scored attempts yet. Start persuading.
-                  </p>
-                )}
-
-                {viewerEntry && !viewerEntry.inTopLeaderboard ? (
-                  <div className="cyber-leaderboard-row cyber-leaderboard-row-active">
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-foreground">
-                        #{viewerEntry.rank} {viewerEntry.displayName}
-                      </p>
-                      <p className="cyber-muted text-[11px]">
-                        {formatPercent(viewerEntry.contributionPercent)}%
-                      </p>
-                    </div>
-                    <span className="cyber-accent-text text-xs font-semibold">
-                      {viewerEntry.points}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="mt-3">
-                <div
-                  className="cyber-pie mx-auto"
-                  style={{ background: pieBackground }}
-                  aria-label="Contribution pie chart"
-                />
-                <div className="mt-3 space-y-1.5">
-                  {pieSegments.length ? (
-                    pieSegments.map((segment) => (
-                      <div
-                        key={`${segment.label}-${segment.color}`}
-                        className="flex items-center justify-between gap-2 text-xs"
-                      >
-                        <span className="min-w-0 truncate text-foreground">
-                          <span
-                            className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle"
-                            style={{ backgroundColor: segment.color }}
-                          />
-                          {segment.isCurrentUser ? "You" : segment.label}
-                        </span>
-                        <span className="cyber-muted shrink-0">
-                          {formatPercent(segment.percent)}%
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="cyber-muted text-xs">
-                      Pie chart appears after scored contributions.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-3 flex items-center gap-1 text-[11px] cyber-muted">
-              <Trophy size={11} />
-              Goal: {goalConfidencePercent.toFixed(1)}% confidence
-            </div>
-          </section>
-
           <div className="mb-2 flex items-center justify-between px-1">
             <p className="cyber-kicker">Sessions</p>
             <span className="cyber-muted text-[11px]">
@@ -689,6 +445,12 @@ export default function ChatClient({
               {sessions.length}
             </span>
           </div>
+
+          <p className="mb-2 px-1">
+            <Link className="cyber-link text-xs" href="/leaderboards">
+              View full leaderboards
+            </Link>
+          </p>
 
           <ul className="space-y-2">
             {sessions.map((session) => {

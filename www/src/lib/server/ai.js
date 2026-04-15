@@ -5,7 +5,8 @@ import path from 'node:path';
 import OpenAI from 'openai';
 
 const OPENAI_MODEL = 'gpt-5-nano';
-const RATING_LINE_REGEX = /^<\{\[\{\{<<\[(10|[0-9])\/10\]>>\}\}\]\}>$/;
+const WRAPPED_RATING_REGEX = /<\{\[\{*\s*<<\[(10|[0-9])\/10\]>>\s*\}*\]\}>/g;
+const INLINE_RATING_REGEX = /<<\[(10|[0-9])\/10\]>>/g;
 
 let cachedMasterPrompt = null;
 let cachedClient = null;
@@ -101,21 +102,32 @@ function splitAssistantReplyAndRating(rawText) {
     };
   }
 
-  const lines = normalized.split('\n');
   let rating = null;
-  const visibleLines = [];
+  let assistantText = normalized.replace(WRAPPED_RATING_REGEX, (_full, score) => {
+    rating = Number.parseInt(score, 10);
+    return '';
+  });
 
-  for (const line of lines) {
-    const match = String(line || '').trim().match(RATING_LINE_REGEX);
-    if (match) {
-      rating = Number.parseInt(match[1], 10);
-      continue;
-    }
-
-    visibleLines.push(line);
+  if (!Number.isFinite(rating)) {
+    assistantText = assistantText.replace(INLINE_RATING_REGEX, (_full, score) => {
+      rating = Number.parseInt(score, 10);
+      return '';
+    });
   }
 
-  const assistantText = visibleLines.join('\n').trim();
+  assistantText = assistantText
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter((line, index, lines) => {
+      if (line.trim()) {
+        return true;
+      }
+
+      const prev = lines[index - 1];
+      return Boolean(prev && prev.trim());
+    })
+    .join('\n')
+    .trim();
 
   return {
     assistantText: assistantText || 'I hear your argument and will consider it.',

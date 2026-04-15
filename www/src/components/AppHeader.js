@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LogOut, MessageSquare, Shield, User } from 'lucide-react';
+import { LogOut, MessageSquare, Shield, Trophy, User } from 'lucide-react';
 
 function buttonClass(active, key, baseClass, activeClass) {
   return active === key ? `cyber-btn ${activeClass}` : `cyber-btn ${baseClass}`;
@@ -25,6 +25,13 @@ export default function AppHeader({ profile, active = '', title = 'Workspace' })
         <Link className={buttonClass(active, 'user', 'cyber-btn-user', 'cyber-btn-user-active')} href="/user">
           <User size={16} />
           User
+        </Link>
+        <Link
+          className={buttonClass(active, 'leaderboards', 'cyber-btn-secondary', 'cyber-btn-solid')}
+          href="/leaderboards"
+        >
+          <Trophy size={16} />
+          Leaderboards
         </Link>
         {showAdmin ? (
           <Link className={buttonClass(active, 'admin', 'cyber-btn-admin', 'cyber-btn-admin-active')} href="/admin/users/">

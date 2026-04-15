@@ -4,7 +4,6 @@ import { createSessionGreeting } from "@/lib/server/ai";
 import {
   addChatMessage,
   createChatSession,
-  getChallengeLeaderboardSnapshot,
   getChatMessages,
   getUserChatSessions,
 } from "@/lib/server/db";
@@ -47,11 +46,6 @@ export default async function ChatPage({ searchParams }) {
     initialMessages = await getChatMessages(initialSessionId, userId);
   }
 
-  const initialChallenge = await getChallengeLeaderboardSnapshot({
-    viewerUserId: userId,
-    limit: 20,
-  });
-
   return (
     <main className="h-[100dvh] w-full overflow-hidden bg-background">
       <div className="cyber-page-shell h-full min-h-0 flex flex-col">
@@ -63,8 +57,6 @@ export default async function ChatPage({ searchParams }) {
             initialSessionId={initialSessionId}
             initialMessages={initialMessages}
             hasInvalidRequestedSession={invalidRequestedSession}
-            initialChallenge={initialChallenge}
-            currentUserId={userId}
           />
         </div>
       </div>

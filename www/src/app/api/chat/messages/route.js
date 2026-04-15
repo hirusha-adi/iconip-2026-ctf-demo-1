@@ -4,14 +4,12 @@ import { NextResponse } from 'next/server';
 
 import {
   appendChatExchange,
-  getChallengeLeaderboardSnapshot,
   getChatMessages,
   getPendingAttachmentsByIds,
   getChatSession,
-  getGlobalPersuasionPoints,
   getPersuasionEvidenceMemory,
   getProfileByClerkId,
-  hasUserSubmissionHash,
+  getUserPersuasionPoints,
   recordPersuasionAttempt,
   touchLastSeen,
 } from '@/lib/server/db';
@@ -70,40 +68,6 @@ function toModelMessageContent(content, attachments = []) {
   return 'No content.';
 }
 
-function normalizeContentForHash(content) {
-  return String(content || '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function buildAttachmentSignature(attachments) {
-  if (!Array.isArray(attachments) || attachments.length === 0) {
-    return [];
-  }
-
-  return attachments
-    .map((attachment) => ({
-      kind: String(attachment.kind || 'file').toLowerCase(),
-      mime: String(attachment.mime_type || '').toLowerCase(),
-      bytes: Number(attachment.byte_size || 0),
-      duration: attachment.duration_seconds === null || attachment.duration_seconds === undefined
-        ? null
-        : Number(attachment.duration_seconds),
-      file: String(attachment.original_filename || '').toLowerCase().trim(),
-    }))
-    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
-}
-
-function buildSubmissionHash(content, attachments) {
-  const payload = {
-    text: normalizeContentForHash(content),
-    attachments: buildAttachmentSignature(attachments),
-  };
-
-  return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
-}
-
 function deriveInputModality(content, attachments) {
   const hasText = Boolean(String(content || '').trim());
   const kinds = new Set((attachments || []).map((attachment) => String(attachment.kind || '').toLowerCase()));
@@ -146,12 +110,38 @@ function isRelevantAttempt(content, attachments) {
   return RELEVANCE_PATTERN.test(text);
 }
 
-function buildOffTopicAssistantReply() {
-  return 'I can only score persuasion attempts about whether water is a solid at room temperature. Please keep your next message focused on that claim.';
+function normalizeContentForHash(content) {
+  return String(content || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-function buildDuplicateAssistantReply() {
-  return 'This looks like a duplicate of an earlier attempt from you. Repeating the same evidence does not add points, so try a meaningfully different argument or media.';
+function buildAttachmentSignature(attachments) {
+  if (!Array.isArray(attachments) || attachments.length === 0) {
+    return [];
+  }
+
+  return attachments
+    .map((attachment) => ({
+      kind: String(attachment.kind || 'file').toLowerCase(),
+      mime: String(attachment.mime_type || '').toLowerCase(),
+      bytes: Number(attachment.byte_size || 0),
+      duration: attachment.duration_seconds === null || attachment.duration_seconds === undefined
+        ? null
+        : Number(attachment.duration_seconds),
+      file: String(attachment.original_filename || '').toLowerCase().trim(),
+    }))
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+}
+
+function buildSubmissionHash(content, attachments) {
+  const payload = {
+    text: normalizeContentForHash(content),
+    attachments: buildAttachmentSignature(attachments),
+  };
+
+  return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 }
 
 function buildEvidencePreview(content, attachments) {
@@ -212,47 +202,35 @@ export async function POST(request) {
 
     const inputModalityHint = deriveInputModality(content, pendingAttachments);
     const submissionHash = buildSubmissionHash(content, pendingAttachments);
-    const duplicateAttempt = await hasUserSubmissionHash({
-      clerkUserId: userId,
-      submissionHash,
-    });
     const relevantAttempt = isRelevantAttempt(content, pendingAttachments);
 
     let assistantReply = '';
     let modelRating = 0;
-    let awardedPoints = 0;
+    const [userPersuasionPoints, evidenceMemory, existingMessages] = await Promise.all([
+      getUserPersuasionPoints(userId),
+      getPersuasionEvidenceMemory(100),
+      getChatMessages(sessionId, userId),
+    ]);
 
-    if (duplicateAttempt) {
-      assistantReply = buildDuplicateAssistantReply();
-    } else if (!relevantAttempt) {
-      assistantReply = buildOffTopicAssistantReply();
-    } else {
-      const [globalPersuasionPoints, evidenceMemory, existingMessages] = await Promise.all([
-        getGlobalPersuasionPoints(),
-        getPersuasionEvidenceMemory(100),
-        getChatMessages(sessionId, userId),
-      ]);
+    const aiResult = await generateAssistantReply({
+      history: [
+        ...existingMessages.map((message) => ({
+          role: message.role,
+          content: toModelMessageContent(message.content, message.attachments || []),
+        })),
+        {
+          role: 'user',
+          content: toModelMessageContent(content, pendingAttachments),
+        },
+      ],
+      globalPersuasionPoints: userPersuasionPoints,
+      evidenceMemory,
+      inputModalityHint,
+    });
 
-      const aiResult = await generateAssistantReply({
-        history: [
-          ...existingMessages.map((message) => ({
-            role: message.role,
-            content: toModelMessageContent(message.content, message.attachments || []),
-          })),
-          {
-            role: 'user',
-            content: toModelMessageContent(content, pendingAttachments),
-          },
-        ],
-        globalPersuasionPoints,
-        evidenceMemory,
-        inputModalityHint,
-      });
-
-      assistantReply = String(aiResult.assistantText || '').trim();
-      modelRating = clampRating(aiResult.attemptRating);
-      awardedPoints = modelRating;
-    }
+    assistantReply = String(aiResult.assistantText || '').trim();
+    modelRating = clampRating(aiResult.attemptRating);
+    const awardedPoints = modelRating;
 
     if (!assistantReply) {
       assistantReply = 'I could not evaluate that turn. Please try again with a clearer argument.';
@@ -278,14 +256,15 @@ export async function POST(request) {
           assistantMessageId: assistantMessageRecord?.id || null,
           submissionHash,
           inputModality: inputModalityHint,
-          isRelevant: relevantAttempt,
-          isDuplicate: duplicateAttempt,
+          isRelevant: true,
+          isDuplicate: false,
           modelRating,
           awardedPoints,
           evidencePreview: buildEvidencePreview(content, pendingAttachments),
           metadata: {
             attachment_count: pendingAttachments.length,
-            used_model: relevantAttempt && !duplicateAttempt,
+            used_model: true,
+            relevant_by_keyword: relevantAttempt,
           },
         });
       }
@@ -293,14 +272,11 @@ export async function POST(request) {
       console.error('Failed to record persuasion score:', scoringError);
     }
 
-    const challenge = await getChallengeLeaderboardSnapshot({ viewerUserId: userId, limit: 20 });
-
     await touchLastSeen(userId, false);
 
     return NextResponse.json({
       messages: inserted,
       assistant: assistantReply,
-      challenge,
     });
   } catch (error) {
     console.error('Failed to post message:', error);
