@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 
+import PublicHeader from '@/components/PublicHeader';
+
 export default async function HomePage() {
   const { userId } = await auth();
 
@@ -10,8 +12,11 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="flex flex-1 items-center">
-      <div className="cyber-shell">
+    <main className="flex flex-1">
+      <div className="cyber-page-shell">
+        <PublicHeader active="home" />
+
+        <div className="cyber-page-content">
         <section className="cyber-card cyber-terminal p-8 sm:p-10">
           <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">
             <div>
@@ -53,6 +58,7 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+        </div>
       </div>
     </main>
   );

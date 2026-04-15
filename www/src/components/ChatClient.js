@@ -422,10 +422,10 @@ export default function ChatClient({
     <div className="cyber-card flex h-full min-h-0 overflow-hidden">
       <aside className="cyber-chat-sidebar flex h-full min-h-0 w-72 shrink-0 flex-col">
         <div className="cyber-chat-sidebar-header shrink-0 p-3">
-          <p className="cyber-kicker">ICONIP CTF</p>
+          <p className="cyber-kicker">Chat Workspace</p>
           <div className="mt-1 flex items-center justify-between gap-2">
             <p className="cyber-title truncate text-sm font-semibold text-foreground">
-              {userName}
+              Welcome back {userName}
             </p>
             <div className="flex items-center gap-1">
               {isAdmin ? (

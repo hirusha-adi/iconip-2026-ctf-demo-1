@@ -99,6 +99,51 @@ select:disabled,
   padding: 1.25rem;
 }
 
+.cyber-page-shell {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.cyber-page-header {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow-extruded-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 0.95rem;
+  flex-wrap: wrap;
+}
+
+.cyber-page-title {
+  font-family: var(--font-heading);
+  color: var(--foreground);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+}
+
+.cyber-page-subtitle {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.1rem;
+}
+
+.cyber-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cyber-page-content {
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+}
+
 .cyber-card {
   border: 1px solid var(--border);
   border-radius: 32px;
@@ -277,6 +322,18 @@ select:disabled,
 .cyber-btn-admin {
   border-color: rgb(62 115 196 / 0.4);
   color: var(--accent-secondary);
+}
+
+.cyber-btn-user-active {
+  background: linear-gradient(145deg, #dbe8ff, #cad8f5);
+  color: var(--accent-light);
+  border-color: rgb(42 76 138 / 0.4);
+}
+
+.cyber-btn-chat-active {
+  background: linear-gradient(145deg, var(--accent-light), var(--accent));
+  color: #f4f7fc;
+  border-color: rgb(21 40 82 / 0.32);
 }
 
 .cyber-btn-admin:hover {
