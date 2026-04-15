@@ -6,8 +6,15 @@ import { useUser } from '@clerk/nextjs';
 import { LogIn, Save, Shield, UserRound } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-export default function UserSettingsClient({ initialFirstName = '', initialLastName = '', initialEmail = '' }) {
+export default function UserSettingsClient({
+  initialFirstName = '',
+  initialLastName = '',
+  initialEmail = '',
+  userPoints = 0,
+}) {
   const { isLoaded, isSignedIn, user } = useUser();
+  const numericPoints = Number(userPoints || 0);
+  const canGenerateCertificate = numericPoints > 5;
 
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
@@ -114,6 +121,22 @@ export default function UserSettingsClient({ initialFirstName = '', initialLastN
           <h1 className="cyber-title mt-2 text-3xl font-semibold text-foreground">User Settings</h1>
           <p className="cyber-muted mt-3 text-sm">Manage profile details, password, and security methods.</p>
           <p className="cyber-muted mt-2 text-sm">Changes are applied to your current account immediately.</p>
+
+          <div className="mt-6 border-t border-[rgba(61,72,82,0.16)] pt-5">
+            <p className="cyber-kicker">Certificate</p>
+            <p className="cyber-muted mt-2 text-sm">
+              Challenge points: <span className="font-semibold text-foreground">{numericPoints.toLocaleString()}</span>
+            </p>
+            {canGenerateCertificate ? (
+              <Link className="cyber-btn cyber-btn-solid mt-4 w-full sm:w-auto" href="/certificate">
+                Generate Certificate
+              </Link>
+            ) : (
+              <p className="cyber-muted mt-3 text-sm">
+                Earn more than 5 points to unlock certificate generation.
+              </p>
+            )}
+          </div>
         </aside>
 
         <section className="border-l border-[rgba(61,72,82,0.22)] pl-6 sm:pl-8">
