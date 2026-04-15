@@ -642,61 +642,65 @@ export default function ChatClient({
                           </div>
                         ) : null}
 
-                        {message.content ? <p>{message.content}</p> : null}
-                        {isDevelopment && !isUser ? (
-                          <div className="mt-2 space-y-2 border-t border-[rgba(21,40,82,0.12)] pt-2 text-[11px] cyber-muted">
-                            <p>
-                              {Number.isFinite(message.ai_score)
-                                ? `Dev score: ${message.ai_score}/10`
-                                : "Dev score: not returned by AI"}
-                              {message.ai_score_source
-                                ? ` (${message.ai_score_source})`
-                                : ""}
-                            </p>
-                            <p>
-                              Rating line:{" "}
-                              <code>
-                                {aiDebug?.rating_line ||
-                                  "[[SCORE:N]]"}
-                              </code>
-                            </p>
-                            <p>
-                              Explicit rating returned:{" "}
-                              {aiDebug?.had_explicit_rating ? "yes" : "no"}
-                            </p>
-                            <p>
-                              Fallback applied:{" "}
-                              {aiDebug?.score_fallback_applied ? "yes" : "no"}
-                            </p>
-                            <p>
-                              Input modality hint:{" "}
-                              {aiDebug?.input_modality_hint || "none"}
-                            </p>
-                            <p>
-                              Relevant by keyword:{" "}
-                              {aiDebug?.relevant_by_keyword ? "yes" : "no"}
-                            </p>
-                            <p>
-                              Submission hash:{" "}
-                              <code>{aiDebug?.submission_hash || "n/a"}</code>
-                            </p>
-                            <details>
-                              <summary className="cursor-pointer font-semibold text-foreground">
-                                Raw model output (unstripped)
-                              </summary>
-                              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded-md border border-[rgba(21,40,82,0.16)] bg-[rgba(255,255,255,0.38)] p-2 text-[10px] leading-relaxed text-foreground">
-                                {aiDebug?.raw_output || "(empty)"}
-                              </pre>
-                            </details>
-                            <details>
-                              <summary className="cursor-pointer font-semibold text-foreground">
-                                Canonical output (forced score at end)
-                              </summary>
-                              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded-md border border-[rgba(21,40,82,0.16)] bg-[rgba(255,255,255,0.38)] p-2 text-[10px] leading-relaxed text-foreground">
-                                {aiDebug?.canonical_output || "(empty)"}
-                              </pre>
-                            </details>
+                        {message.content ? (
+                          <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                            {message.content}
                           </div>
+                        ) : null}
+                        {isDevelopment && !isUser ? (
+                          <details className="mt-2 border-t border-[rgba(21,40,82,0.12)] pt-2 text-[11px] cyber-muted">
+                            <summary className="cursor-pointer font-semibold text-foreground">
+                              Debug details
+                            </summary>
+                            <div className="mt-2 space-y-2">
+                              <p>
+                                {Number.isFinite(message.ai_score)
+                                  ? `Dev score: ${message.ai_score}/10`
+                                  : "Dev score: not returned by AI"}
+                                {message.ai_score_source
+                                  ? ` (${message.ai_score_source})`
+                                  : ""}
+                              </p>
+                              <p>
+                                Rating line:{" "}
+                                <code>{aiDebug?.rating_line || "[[SCORE:N]]"}</code>
+                              </p>
+                              <p>
+                                Explicit rating returned:{" "}
+                                {aiDebug?.had_explicit_rating ? "yes" : "no"}
+                              </p>
+                              <p>
+                                Fallback applied:{" "}
+                                {aiDebug?.score_fallback_applied ? "yes" : "no"}
+                              </p>
+                              <p>
+                                Input modality hint:{" "}
+                                {aiDebug?.input_modality_hint || "none"}
+                              </p>
+                              <p>
+                                Relevant by keyword:{" "}
+                                {aiDebug?.relevant_by_keyword ? "yes" : "no"}
+                              </p>
+                              <p>
+                                Submission hash:{" "}
+                                <code>{aiDebug?.submission_hash || "n/a"}</code>
+                              </p>
+
+                              <div>
+                                <p className="font-semibold text-foreground">Raw model output (unstripped)</p>
+                                <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded-md border border-[rgba(21,40,82,0.16)] bg-[rgba(255,255,255,0.38)] p-2 text-[10px] leading-relaxed text-foreground">
+                                  {aiDebug?.raw_output || "(empty)"}
+                                </pre>
+                              </div>
+
+                              <div>
+                                <p className="font-semibold text-foreground">Canonical output (forced score at end)</p>
+                                <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded-md border border-[rgba(21,40,82,0.16)] bg-[rgba(255,255,255,0.38)] p-2 text-[10px] leading-relaxed text-foreground">
+                                  {aiDebug?.canonical_output || "(empty)"}
+                                </pre>
+                              </div>
+                            </div>
+                          </details>
                         ) : null}
                       </div>
                     </div>
