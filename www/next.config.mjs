@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  allowedDevOrigins: ['tmp.hirusha.xyz', '*.hirusha.xyz'],
 };
 
 export default nextConfig;
