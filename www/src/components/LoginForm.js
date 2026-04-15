@@ -93,6 +93,27 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
   const [secondFactorMethod, setSecondFactorMethod] = useState(SECOND_FACTOR_METHOD.TOTP);
 
   const isBusy = fetchStatus === 'fetching';
+  const secondFactorOptions = useMemo(
+    () =>
+      [
+        {
+          key: SECOND_FACTOR_METHOD.TOTP,
+          label: 'authenticator app',
+          enabled: availableSecondFactors[SECOND_FACTOR_METHOD.TOTP],
+        },
+        {
+          key: SECOND_FACTOR_METHOD.BACKUP_CODE,
+          label: 'backup code',
+          enabled: availableSecondFactors[SECOND_FACTOR_METHOD.BACKUP_CODE],
+        },
+        {
+          key: SECOND_FACTOR_METHOD.EMAIL_CODE,
+          label: 'email code',
+          enabled: availableSecondFactors[SECOND_FACTOR_METHOD.EMAIL_CODE],
+        },
+      ].filter((option) => option.enabled),
+    [availableSecondFactors],
+  );
 
   const verifiedMessage = useMemo(() => {
     if (initialMessage) {
@@ -381,49 +402,41 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
           </button>
         </form>
       ) : (
-        <form className="mt-4 space-y-4" onSubmit={handleSecondFactorSubmit}>
-          <p className="cyber-note cyber-note-info">Second-factor verification is required.</p>
-          {secondFactorInfo ? <p className="cyber-muted text-xs">{secondFactorInfo}</p> : null}
-          <p className="cyber-muted text-xs">
-            Default is <strong>Authenticator app</strong>. If needed, switch to <strong>Email code</strong> or
-            <strong> Backup code</strong>.
-          </p>
+        <form className="mt-5 space-y-5" onSubmit={handleSecondFactorSubmit}>
+          <div className="space-y-2">
+            <h2 className="cyber-title text-xl font-semibold text-foreground">Second factor verification</h2>
+            <p className="cyber-muted text-sm">
+              Second-factor verification is required.{' '}
+              {secondFactorInfo ? (
+                <>
+                  {secondFactorInfo}{' '}
+                </>
+              ) : null}
+              Default is <strong>Authenticator app</strong>. If needed, switch to <strong>Email code</strong> or
+              <strong> Backup code</strong>.
+            </p>
+          </div>
 
-          <div className="flex flex-wrap gap-2">
-            {availableSecondFactors[SECOND_FACTOR_METHOD.TOTP] ? (
-              <button
-                type="button"
-                className={`cyber-btn ${secondFactorMethod === SECOND_FACTOR_METHOD.TOTP ? 'cyber-btn-solid' : 'cyber-btn-outline'}`}
-                onClick={() => handleSecondFactorMethodChange(SECOND_FACTOR_METHOD.TOTP)}
-              >
-                Authenticator app
-              </button>
-            ) : null}
-
-            {availableSecondFactors[SECOND_FACTOR_METHOD.BACKUP_CODE] ? (
-              <button
-                type="button"
-                className={`cyber-btn ${secondFactorMethod === SECOND_FACTOR_METHOD.BACKUP_CODE ? 'cyber-btn-solid' : 'cyber-btn-outline'}`}
-                onClick={() => handleSecondFactorMethodChange(SECOND_FACTOR_METHOD.BACKUP_CODE)}
-              >
-                Backup code
-              </button>
-            ) : null}
-
-            {availableSecondFactors[SECOND_FACTOR_METHOD.EMAIL_CODE] ? (
-              <button
-                type="button"
-                className={`cyber-btn ${secondFactorMethod === SECOND_FACTOR_METHOD.EMAIL_CODE ? 'cyber-btn-solid' : 'cyber-btn-outline'}`}
-                onClick={() => handleSecondFactorMethodChange(SECOND_FACTOR_METHOD.EMAIL_CODE)}
-              >
-                Email code
-              </button>
-            ) : null}
-
+          <div className="space-y-3">
+            <div
+              className="grid overflow-hidden rounded-2xl border border-[rgba(21,40,82,0.26)] shadow-[5px_5px_10px_rgb(163,177,198,0.35),-5px_-5px_10px_rgba(255,255,255,0.4)]"
+              style={{ gridTemplateColumns: `repeat(${Math.max(secondFactorOptions.length, 1)}, minmax(0, 1fr))` }}
+            >
+              {secondFactorOptions.map((option, index) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  className={`min-h-[48px] px-3 text-center text-base font-semibold capitalize transition-colors duration-300 ${index > 0 ? 'border-l border-[rgba(21,40,82,0.24)]' : ''} ${secondFactorMethod === option.key ? 'bg-[rgba(42,76,138,0.18)] text-[#152852]' : 'bg-transparent text-[rgba(61,72,82,0.92)] hover:bg-[rgba(42,76,138,0.08)]'}`}
+                  onClick={() => handleSecondFactorMethodChange(option.key)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <label className="cyber-label" htmlFor="secondFactorCode">
-            Code
+            <span className="sr-only">Verification code</span>
             <div className="cyber-input-wrap">
               <input
                 id="secondFactorCode"
@@ -431,26 +444,32 @@ export default function LoginForm({ initialMessage = '', nextPath = '' }) {
                 className="cyber-input"
                 value={secondFactorCode}
                 onChange={(event) => setSecondFactorCode(event.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
                 required
               />
             </div>
           </label>
 
-          <button
-            type="submit"
-            className="cyber-btn cyber-btn-solid w-full"
-            disabled={isBusy || !secondFactorCode.trim()}
-          >
-            {isBusy ? 'Verifying...' : 'Verify code'}
-          </button>
+          <div className="flex items-stretch gap-2">
+            <button
+              type="submit"
+              className="cyber-btn cyber-btn-solid w-full flex-1"
+              disabled={isBusy || !secondFactorCode.trim()}
+            >
+              {isBusy ? 'Verifying...' : 'Verify code'}
+            </button>
 
-          <button
-            type="button"
-            className="cyber-btn cyber-btn-outline w-full"
-            onClick={resetToPasswordStage}
-          >
-            Back to password
-          </button>
+            <button
+              type="button"
+              className="cyber-btn cyber-btn-outline !h-[44px] !min-h-0 !w-[64px] !px-0 text-2xl leading-none"
+              onClick={resetToPasswordStage}
+              aria-label="Back to password"
+              title="Back to password"
+            >
+              ←
+            </button>
+          </div>
         </form>
       )}
 
