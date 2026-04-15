@@ -11,6 +11,7 @@ export const VALID_STATIC_ROUTES = new Set([
   '/chat',
   '/leaderboards',
   '/guide',
+  '/prizes',
   '/admin',
   '/admin/users',
   '/admin/users/all',

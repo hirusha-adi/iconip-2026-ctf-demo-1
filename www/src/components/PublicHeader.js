@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, Home, LogIn, Trophy, UserPlus } from 'lucide-react';
+import { BookOpen, Gift, Home, LogIn, Trophy, UserPlus } from 'lucide-react';
 
 function getNavClass(activeKey, key, inactiveClass) {
   return activeKey === key ? 'cyber-btn cyber-btn-solid' : `cyber-btn ${inactiveClass}`;
@@ -25,6 +25,10 @@ export default function PublicHeader({ active = '' }) {
         <Link className={getNavClass(active, 'guide', 'cyber-btn-secondary')} href="/guide">
           <BookOpen size={16} />
           Guide
+        </Link>
+        <Link className={getNavClass(active, 'prizes', 'cyber-btn-secondary')} href="/prizes">
+          <Gift size={16} />
+          Prizes
         </Link>
         <Link className={getNavClass(active, 'login', 'cyber-btn-chat')} href="/login">
           <LogIn size={16} />
